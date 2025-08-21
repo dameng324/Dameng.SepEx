@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dameng.SepEx.Generator", "src\Dameng.SepEx.Generator\Dameng.SepEx.Generator.csproj", "{2261AABD-7C54-4C8C-A5F8-FCEA8215FE48}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dameng.SepEx.Tests", "tests\Dameng.SepEx.Tests\Dameng.SepEx.Tests.csproj", "{46E4D9B7-E1B1-4228-B9B2-C4F22CDB4576}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dameng.SepEx", "src\Dameng.SepEx\Dameng.SepEx.csproj", "{E61F75C9-3149-45A2-A99D-384AD824F5E9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "items", "items", "{A95B1DCA-8547-4BAE-9070-7B7557B528D7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2261AABD-7C54-4C8C-A5F8-FCEA8215FE48}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2261AABD-7C54-4C8C-A5F8-FCEA8215FE48}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2261AABD-7C54-4C8C-A5F8-FCEA8215FE48}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2261AABD-7C54-4C8C-A5F8-FCEA8215FE48}.Release|Any CPU.Build.0 = Release|Any CPU
+		{46E4D9B7-E1B1-4228-B9B2-C4F22CDB4576}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{46E4D9B7-E1B1-4228-B9B2-C4F22CDB4576}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{46E4D9B7-E1B1-4228-B9B2-C4F22CDB4576}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{46E4D9B7-E1B1-4228-B9B2-C4F22CDB4576}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E61F75C9-3149-45A2-A99D-384AD824F5E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E61F75C9-3149-45A2-A99D-384AD824F5E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E61F75C9-3149-45A2-A99D-384AD824F5E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E61F75C9-3149-45A2-A99D-384AD824F5E9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
