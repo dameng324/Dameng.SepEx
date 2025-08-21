@@ -239,7 +239,7 @@ public class SepTypeInfoGenerator : ISourceGenerator
                                         else
                                         {
                                             propertyReadCodeBuilder.AppendLine(
-                                                $"            readRow[{readColKey}].TryParse<{memberType.ToDisplayString()}>(out var v{propertyIndex})?v{propertyIndex}:{defaultValue},"
+                                                $"            readRow[{readColKey}].TryParse<{memberType.ToDisplayString()}>(out var v{propertyIndex}) ? v{propertyIndex} : {defaultValue},"
                                             );
                                         }
                                     }
