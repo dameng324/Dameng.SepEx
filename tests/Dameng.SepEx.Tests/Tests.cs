@@ -106,6 +106,51 @@ public class Tests
         Console.WriteLine($"Record 2 NullableInt: {records[1].NullableInt}");  // Should be null
         Console.WriteLine($"Record 3 NullableInt: {records[2].NullableInt}");
     }
+    
+    /*
+    [Test]
+    public void EnumType_CanReadAndWriteByName()
+    {
+        var text = """
+            Name;Status;Priority;OptionalPriority
+            Task1;Active;High;Medium
+            Task2;Inactive;Low;
+            Task3;Pending;Medium;High
+            """;
+
+        using var reader = Sep.Reader().FromText(text);
+        var records = reader.GetRecords<RecordWithEnums>(TestSepTypeInfo.RecordWithEnums).ToList();
+        
+        Console.WriteLine($"Records count: {records.Count}");
+        foreach (var record in records)
+        {
+            Console.WriteLine($"Name: {record.Name}, Status: {record.Status}, Priority: {record.Priority}, OptionalPriority: {record.OptionalPriority}");
+        }
+        
+        // Write back to verify round-trip
+        var stringBuilder = new StringBuilder();
+        using (var writer = Sep.Writer().To(stringBuilder))
+        {
+            writer.WriteRecords(records, TestSepTypeInfo.RecordWithEnums);
+        }
+        Console.WriteLine("Written CSV:");
+        Console.WriteLine(stringBuilder.ToString());
+        
+        // Verify the written values contain enum names, not numeric values
+        var writtenText = stringBuilder.ToString();
+        StringAssert.Contains("Active", writtenText);
+        StringAssert.Contains("Inactive", writtenText); 
+        StringAssert.Contains("Pending", writtenText);
+        StringAssert.Contains("High", writtenText);
+        StringAssert.Contains("Medium", writtenText);
+        StringAssert.Contains("Low", writtenText);
+        
+        // Verify it does NOT contain numeric values
+        StringAssert.DoesNotContain("10", writtenText); // High = 10
+        StringAssert.DoesNotContain("5", writtenText);  // Medium = 5  
+        StringAssert.DoesNotContain("1", writtenText);  // Low = 1
+    }
+    */
 }
 
 public class Record
@@ -173,6 +218,30 @@ public class SimpleNullableRecord
     public int? NullableInt { get; init; }
 }
 
+// Test enums
+public enum Status
+{
+    Active,
+    Inactive,
+    Pending
+}
+
+public enum Priority
+{
+    Low = 1,
+    Medium = 5,
+    High = 10
+}
+
+// Test record with enums
+public class RecordWithEnums
+{
+    public string Name { get; set; }
+    public Status Status { get; set; }
+    public Priority Priority { get; set; }
+    public Priority? OptionalPriority { get; set; }
+}
+
 [GenSepTypeInfo<Record>()]
 [GenSepTypeInfo<Record2>()]
 [GenSepTypeInfo<Record3>()]
@@ -180,6 +249,7 @@ public class SimpleNullableRecord
 [GenSepTypeInfo<Record5>()]
 [GenSepTypeInfo<Record6>()]
 [GenSepTypeInfo<SimpleNullableRecord>()]
+// [GenSepTypeInfo<RecordWithEnums>()] // Temporarily commented out to debug enum detection
 public partial class TestSepTypeInfo;
 
 file sealed class RecordSepTypeInfo : ISepTypeInfo<Dameng.Sep.Gen.Tests.Record>

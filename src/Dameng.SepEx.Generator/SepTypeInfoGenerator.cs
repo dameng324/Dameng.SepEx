@@ -166,15 +166,116 @@ public class SepTypeInfoGenerator : ISourceGenerator
                                 underlyingType = ((INamedTypeSymbol)memberType).TypeArguments[0];
                             }
 
-                            var spanParsableDefine = (isNullable ? underlyingType : memberType).AllInterfaces.FirstOrDefault(i =>
-                                SymbolEqualityComparer.Default.Equals(
-                                    i.OriginalDefinition,
-                                    spanParsableInterface
-                                )
-                            );
-                            
-                            if (
-                                spanParsableDefine is not null
+                            // Check if it's an enum type
+                            bool isEnum = (isNullable ? underlyingType : memberType).TypeKind == TypeKind.Enum;
+
+                            if (isEnum)
+                            {
+                                // Handle enum types specially
+                                propertyIndex++;
+
+                                var defaultValueAttributeValue = member
+                                    .GetAttributes()
+                                    .FirstOrDefault(o =>
+                                        o.AttributeClass?.ToDisplayString()
+                                            .Equals("Dameng.SepEx.SepDefaultValueAttribute") == true
+                                    )
+                                    ?.ConstructorArguments.FirstOrDefault()
+                                    .Value;
+                                    
+                                var enumTypeName = (isNullable ? underlyingType : memberType).ToDisplayString();
+                                var defaultValue = isNullable
+                                    ? defaultValueAttributeValue is null
+                                        ? "null"
+                                        : $"({underlyingType.ToDisplayString()}?){defaultValueAttributeValue}"
+                                    : defaultValueAttributeValue is null
+                                        ? "default(" + memberType.ToDisplayString() + ")"
+                                        : defaultValueAttributeValue.ToString();
+
+                                var columnName =
+                                    member
+                                        .GetAttributes()
+                                        .FirstOrDefault(o =>
+                                            o.AttributeClass?.ToDisplayString()
+                                                .Equals("Dameng.SepEx.SepColumnNameAttribute")
+                                            == true
+                                        )
+                                        ?.ConstructorArguments.FirstOrDefault()
+                                        .Value?.ToString() ?? memberName;
+                                var columnIndex = member
+                                    .GetAttributes()
+                                    .FirstOrDefault(o =>
+                                        o.AttributeClass?.ToDisplayString()
+                                            .Equals("Dameng.SepEx.SepColumnIndexAttribute") == true
+                                    )
+                                    ?.ConstructorArguments.FirstOrDefault()
+                                    .Value?.ToString();
+
+                                string readColKey = columnIndex ?? $"\"{columnName}\"";
+                                string writeColKey = $"\"{columnName}\"";
+
+                                if (isWritable)
+                                {
+                                    if (hasPrimaryConstructor)
+                                    {
+                                        if (isNullable)
+                                        {
+                                            propertyReadCodeBuilder.AppendLine(
+                                                $"            System.Enum.TryParse<{underlyingType.ToDisplayString()}>(readRow[{readColKey}].ToString(), out var v{propertyIndex}) ? v{propertyIndex} : {defaultValue},"
+                                            );
+                                        }
+                                        else
+                                        {
+                                            propertyReadCodeBuilder.AppendLine(
+                                                $"            System.Enum.TryParse<{memberType.ToDisplayString()}>(readRow[{readColKey}].ToString(), out var v{propertyIndex}) ? v{propertyIndex} : {defaultValue},"
+                                            );
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (isNullable)
+                                        {
+                                            propertyReadCodeBuilder.AppendLine(
+                                                $"            {memberName} = System.Enum.TryParse<{underlyingType.ToDisplayString()}>(readRow[{readColKey}].ToString(), out var v{propertyIndex}) ? v{propertyIndex} : {defaultValue},"
+                                            );
+                                        }
+                                        else
+                                        {
+                                            propertyReadCodeBuilder.AppendLine(
+                                                $"            {memberName} = System.Enum.TryParse<{memberType.ToDisplayString()}>(readRow[{readColKey}].ToString(), out var v{propertyIndex}) ? v{propertyIndex} : {defaultValue},"
+                                            );
+                                        }
+                                    }
+                                }
+
+                                if (isReadable)
+                                {
+                                    string valueString;
+                                    if (isNullable)
+                                    {
+                                        valueString = $"Set(value.{memberName}?.ToString() ?? string.Empty)";
+                                    }
+                                    else
+                                    {
+                                        valueString = $"Set(value.{memberName}.ToString())";
+                                    }
+
+                                    propertyWriteCodeBuilder.AppendLine(
+                                        $"        writeRow[{writeColKey}].{valueString};"
+                                    );
+                                }
+                            }
+                            else
+                            {
+                                var spanParsableDefine = (isNullable ? underlyingType : memberType).AllInterfaces.FirstOrDefault(i =>
+                                    SymbolEqualityComparer.Default.Equals(
+                                        i.OriginalDefinition,
+                                        spanParsableInterface
+                                    )
+                                );
+                                
+                                if (
+                                    spanParsableDefine is not null
                                 && spanParsableDefine.TypeArguments.Length == 1
                                 && SymbolEqualityComparer.Default.Equals(
                                     spanParsableDefine.TypeArguments[0],
@@ -331,6 +432,7 @@ public class SepTypeInfoGenerator : ISourceGenerator
                                     )
                                 );
                             }
+                        }
                         }
 
                         targetTypeNames.Add(targetType);
