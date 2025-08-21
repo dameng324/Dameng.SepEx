@@ -18,7 +18,7 @@ public static class SepReaderExtension
         }
     }
 
-    public static void WriteRecord<T>(this SepWriter writer, IEnumerable<T> values, ISepTypeInfo<T> typeInfo)
+    public static void WriteRecords<T>(this SepWriter writer, IEnumerable<T> values, ISepTypeInfo<T> typeInfo)
     {
         foreach (var value in values)
         {

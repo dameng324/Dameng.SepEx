@@ -52,7 +52,7 @@ public class Tests
         };
         {
             using var writer = Sep.Writer().To(stringBuilder);
-            writer.WriteRecord(records, TestSepTypeInfo.Record);
+            writer.WriteRecords(records, TestSepTypeInfo.Record);
         }
         Console.WriteLine(stringBuilder.ToString());
     }
