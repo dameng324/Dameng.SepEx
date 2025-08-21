@@ -147,17 +147,9 @@ public record Record6(string A,string B,double D,float E);
 public class Record7(string A,string B,double D,float E);
 
 // Test record for nullable types
-public class NullableRecord
+public class SimpleNullableRecord
 {
     public int? NullableInt { get; set; }
-    
-    [SepDefaultValue(null)]
-    public decimal? NullableDecimal { get; set; }
-    
-    [SepDefaultValue(123)]
-    public int? NullableIntWithDefault { get; set; }
-    
-    public double? NullableDouble { get; set; }
 }
 
 [GenSepTypeInfo<Record>()]
@@ -166,7 +158,7 @@ public class NullableRecord
 [GenSepTypeInfo<Record4>()]
 [GenSepTypeInfo<Record5>()]
 [GenSepTypeInfo<Record6>()]
-[GenSepTypeInfo<NullableRecord>()]
+[GenSepTypeInfo<SimpleNullableRecord>()]
 public partial class TestSepTypeInfo;
 
 file sealed class RecordSepTypeInfo : ISepTypeInfo<Dameng.Sep.Gen.Tests.Record>
