@@ -157,18 +157,28 @@ public class SepTypeInfoGenerator : ISourceGenerator
                                 continue;
                             }
 
-                            var spanParsableDefine = memberType.AllInterfaces.FirstOrDefault(i =>
+                            // Check if it's a nullable type first
+                            bool isNullable = false;
+                            ITypeSymbol underlyingType = memberType;
+                            if (memberType.OriginalDefinition?.SpecialType == SpecialType.System_Nullable_T)
+                            {
+                                isNullable = true;
+                                underlyingType = ((INamedTypeSymbol)memberType).TypeArguments[0];
+                            }
+
+                            var spanParsableDefine = (isNullable ? underlyingType : memberType).AllInterfaces.FirstOrDefault(i =>
                                 SymbolEqualityComparer.Default.Equals(
                                     i.OriginalDefinition,
                                     spanParsableInterface
                                 )
                             );
+                            
                             if (
                                 spanParsableDefine is not null
                                 && spanParsableDefine.TypeArguments.Length == 1
                                 && SymbolEqualityComparer.Default.Equals(
                                     spanParsableDefine.TypeArguments[0],
-                                    memberType
+                                    isNullable ? underlyingType : memberType
                                 )
                             )
                             {
@@ -186,9 +196,13 @@ public class SepTypeInfoGenerator : ISourceGenerator
                                     ? defaultValueAttributeValue is null
                                         ? "string.Empty"
                                         : $"\"{defaultValueAttributeValue}\""
-                                    : defaultValueAttributeValue is null
-                                        ? "default(" + memberType.ToDisplayString() + ")"
-                                        : defaultValueAttributeValue.ToString();
+                                    : isNullable
+                                        ? defaultValueAttributeValue is null
+                                            ? "null"
+                                            : $"({underlyingType.ToDisplayString()}?){defaultValueAttributeValue}"
+                                        : defaultValueAttributeValue is null
+                                            ? "default(" + memberType.ToDisplayString() + ")"
+                                            : defaultValueAttributeValue.ToString();
 
                                 var columnName =
                                     member
@@ -216,15 +230,33 @@ public class SepTypeInfoGenerator : ISourceGenerator
                                 {
                                     if (hasPrimaryConstructor)
                                     {
-                                        propertyReadCodeBuilder.AppendLine(
-                                            $"            readRow[{readColKey}].TryParse<{memberType.ToDisplayString()}>(out var v{propertyIndex})?v{propertyIndex}:{defaultValue},"
-                                        );
+                                        if (isNullable)
+                                        {
+                                            propertyReadCodeBuilder.AppendLine(
+                                                $"            readRow[{readColKey}].TryParse<{underlyingType.ToDisplayString()}>(out var v{propertyIndex}) ? v{propertyIndex} : {defaultValue},"
+                                            );
+                                        }
+                                        else
+                                        {
+                                            propertyReadCodeBuilder.AppendLine(
+                                                $"            readRow[{readColKey}].TryParse<{memberType.ToDisplayString()}>(out var v{propertyIndex}) ? v{propertyIndex} : {defaultValue},"
+                                            );
+                                        }
                                     }
                                     else
                                     {
-                                        propertyReadCodeBuilder.AppendLine(
-                                            $"            {memberName} = readRow[{readColKey}].TryParse<{memberType.ToDisplayString()}>(out var v{propertyIndex})?v{propertyIndex}:{defaultValue},"
-                                        );
+                                        if (isNullable)
+                                        {
+                                            propertyReadCodeBuilder.AppendLine(
+                                                $"            {memberName} = readRow[{readColKey}].TryParse<{underlyingType.ToDisplayString()}>(out var v{propertyIndex}) ? v{propertyIndex} : {defaultValue},"
+                                            );
+                                        }
+                                        else
+                                        {
+                                            propertyReadCodeBuilder.AppendLine(
+                                                $"            {memberName} = readRow[{readColKey}].TryParse<{memberType.ToDisplayString()}>(out var v{propertyIndex}) ? v{propertyIndex} : {defaultValue},"
+                                            );
+                                        }
                                     }
                                 }
 
@@ -235,14 +267,21 @@ public class SepTypeInfoGenerator : ISourceGenerator
                                     // );
                                     string valueString;
                                     if (
-                                        memberType
+                                        (isNullable ? underlyingType : memberType)
                                             .ToDisplayString(
                                                 SymbolDisplayFormat.FullyQualifiedFormat
                                             )
                                             .Equals("string")
                                     )
                                     {
-                                        valueString = $"Set(value.{memberName})";
+                                        if (isNullable)
+                                        {
+                                            valueString = $"Set(value.{memberName}?.ToString() ?? string.Empty)";
+                                        }
+                                        else
+                                        {
+                                            valueString = $"Set(value.{memberName})";
+                                        }
                                     }
                                     else
                                     {
@@ -255,9 +294,20 @@ public class SepTypeInfoGenerator : ISourceGenerator
                                             )
                                             ?.ConstructorArguments.FirstOrDefault()
                                             .Value?.ToString();
-                                        valueString = string.IsNullOrWhiteSpace(format)
-                                            ? $"Format(value.{memberName})"
-                                            : $"Set(value.{memberName}.ToString(\"{format}\"))";
+                                        
+                                        if (isNullable)
+                                        {
+                                            // For now, always use Set with ToString for nullable types to avoid Format constraints
+                                            valueString = string.IsNullOrWhiteSpace(format)
+                                                ? $"Set(value.{memberName}?.ToString() ?? string.Empty)"
+                                                : $"Set(value.{memberName}?.ToString(\"{format}\") ?? string.Empty)";
+                                        }
+                                        else
+                                        {
+                                            valueString = string.IsNullOrWhiteSpace(format)
+                                                ? $"Format(value.{memberName})"
+                                                : $"Set(value.{memberName}.ToString(\"{format}\"))";
+                                        }
                                     }
 
                                     propertyWriteCodeBuilder.AppendLine(

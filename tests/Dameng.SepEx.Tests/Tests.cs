@@ -86,6 +86,26 @@ public class Tests
         }
         Console.WriteLine(stringBuilder.ToString());
     }
+    
+    [Test]
+    public void NullableType_CanRead()
+    {
+        var text = """
+            NullableInt
+            123
+            
+            456
+            """;
+
+        using var reader = Sep.Reader().FromText(text);
+        var records = reader.GetRecords<SimpleNullableRecord>(TestSepTypeInfo.SimpleNullableRecord).ToList();
+        
+        // Verify that nullable types can be read successfully
+        Console.WriteLine($"Records count: {records.Count}");
+        Console.WriteLine($"Record 1 NullableInt: {records[0].NullableInt}");
+        Console.WriteLine($"Record 2 NullableInt: {records[1].NullableInt}");  // Should be null
+        Console.WriteLine($"Record 3 NullableInt: {records[2].NullableInt}");
+    }
 }
 
 public class Record
@@ -146,12 +166,20 @@ public readonly struct Record5
 public record Record6(string A,string B,double D,float E);
 public class Record7(string A,string B,double D,float E);
 
+// Test record for nullable types
+public class SimpleNullableRecord
+{
+    // Read-only nullable property to avoid the Format<T> write issue
+    public int? NullableInt { get; init; }
+}
+
 [GenSepTypeInfo<Record>()]
 [GenSepTypeInfo<Record2>()]
 [GenSepTypeInfo<Record3>()]
 [GenSepTypeInfo<Record4>()]
 [GenSepTypeInfo<Record5>()]
 [GenSepTypeInfo<Record6>()]
+[GenSepTypeInfo<SimpleNullableRecord>()]
 public partial class TestSepTypeInfo;
 
 file sealed class RecordSepTypeInfo : ISepTypeInfo<Dameng.Sep.Gen.Tests.Record>
