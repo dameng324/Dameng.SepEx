@@ -169,7 +169,7 @@ public class Record7(string A,string B,double D,float E);
 // Test record for nullable types
 public class SimpleNullableRecord
 {
-    // Read-only nullable property to avoid the Format<T> write issue  
+    // Read-only nullable property to avoid the Format<T> write issue
     public int? NullableInt { get; init; }
 }
 
