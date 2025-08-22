@@ -52,13 +52,13 @@ jobs:
             --configuration Release \
             --no-build \
             --output ./packages \
-            -p:PackageVersion=$VERSION
+            -p:Version=$VERSION
 
           dotnet pack src/Dameng.SepEx.Generator/Dameng.SepEx.Generator.csproj \
             --configuration Release \
             --no-build \
             --output ./packages \
-            -p:PackageVersion=$VERSION
+            -p:Version=$VERSION
 
       - name: Publish to NuGet
         run: |
