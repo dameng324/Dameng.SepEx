@@ -6,6 +6,7 @@ namespace Dameng.SepEx;
 /// for types that can be read and written using SepReader and SepWriter.
 /// </summary>
 /// <typeparam name="TSelf"></typeparam>
+[CLSCompliant(false)]
 public interface ISepParsable<TSelf> where TSelf : ISepParsable<TSelf>
 {
     public static abstract TSelf Read(SepReader reader,SepReader.Row readRow);

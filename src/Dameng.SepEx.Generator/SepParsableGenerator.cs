@@ -149,11 +149,13 @@ public class SepParsableGenerator : ISourceGenerator
         var targetClassDef = $$"""
             {{nestedTypeDeclaration}} : ISepParsable<{{targetType.ToDisplayString()}}>
             {
+                /// <inheritdoc/>
                 public static {{targetType.ToDisplayString()}} Read(nietras.SeparatedValues.SepReader reader, nietras.SeparatedValues.SepReader.Row readRow) 
                 {
             {{initCode}}
                 }
-
+            
+                /// <inheritdoc/>
                 public static void Write(nietras.SeparatedValues.SepWriter writer,nietras.SeparatedValues.SepWriter.Row writeRow, {{targetType.ToDisplayString()}} value)
                 {
             {{writeCode.TrimEnd()}}

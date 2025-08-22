@@ -116,6 +116,10 @@ public class SepTypeInfoGenerator : ISourceGenerator
                         {
                             staticTypeInfoPropertyCodeBuilder.AppendLine(
                                 $$"""
+                                  
+                                      /// <summary>
+                                      /// Generated ISepTypeInfo<{{targetTypeName.ToDisplayString()}}> 
+                                      /// </summary>
                                       public static ISepTypeInfo<{{targetTypeName.ToDisplayString()}}> {{targetTypeName.Name}} { get; } = new {{targetTypeName.Name}}SepTypeInfo();
                                   """
                             );
