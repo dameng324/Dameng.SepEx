@@ -754,6 +754,26 @@ public class SepTypeInfoGenerator : ISourceGenerator
                         );
                     }
 
+                    // Generate ISepParsable implementation if GenSepParsable attribute is present
+                    if (genParsableAttribute is not null)
+                    {
+                        context.ReportDiagnostic(
+                            Diagnostic.Create(
+                                new DiagnosticDescriptor(
+                                    "SP201",
+                                    "About to call ProcessGenSepParsable",
+                                    $"About to call ProcessGenSepParsable for class '{classSymbol.Name}'",
+                                    "Debug",
+                                    DiagnosticSeverity.Info,
+                                    true
+                                ),
+                                Location.None
+                            )
+                        );
+                        ProcessGenSepParsable(classSymbol, spanParsableInterface, context);
+                        return; // Don't process the rest if we're generating ISepParsable
+                    }
+
                     var accessibility =
                         classSymbol.DeclaredAccessibility is Accessibility.Public
                             ? "public"
@@ -770,61 +790,14 @@ public class SepTypeInfoGenerator : ISourceGenerator
                         );
                     }
 
-                    // Generate ISepParsable implementation if GenSepParsable attribute is present
-                    if (genParsableAttribute is not null)
-                    {
-                        var propertyReadCodeBuilder = new StringBuilder();
-                        var propertyWriteCodeBuilder = new StringBuilder();
-                        GeneratePropertyCode(classSymbol, classSymbol, spanParsableInterface, 
-                                           propertyReadCodeBuilder, propertyWriteCodeBuilder, context);
-
-                        bool hasPrimaryConstructor =
-                            classSymbol.Constructors.Any(c =>
-                                c.IsImplicitlyDeclared == false && c.Parameters.Length > 0
-                            );
-
-                        var instanceInitCode = hasPrimaryConstructor
-                            ? $$"""
-                                            return new {{classSymbol.ToDisplayString()}}(
-                                {{propertyReadCodeBuilder.ToString().TrimEnd().TrimEnd(',')}}
-                                            );
-                                """
-                            : $$"""
-                                            return new {{classSymbol.ToDisplayString()}}() 
-                                            {
-                                {{propertyReadCodeBuilder.ToString().TrimEnd().TrimEnd(',')}}
-                                            };
-                                """;
-
-                        genClassCodeBuilder.Append(
-                            $$"""
-                            {{accessibility}} partial class {{classSymbol.Name}} : ISepParsable<{{classSymbol.ToDisplayString()}}>
-                            {
-                                public static {{classSymbol.ToDisplayString()}} Read(nietras.SeparatedValues.SepReader.Row readRow) 
-                                {
-                            {{instanceInitCode}}
-                                }
-
-                                public static void Write(nietras.SeparatedValues.SepWriter.Row writeRow, {{classSymbol.ToDisplayString()}} value)
-                                {
-                            {{propertyWriteCodeBuilder.ToString().TrimEnd()}}
-                                }
-                            }
-                            
-                            """
-                        );
-                    }
-                    else
-                    {
-                        genClassCodeBuilder.Append(
-                            $$"""
-                            {{accessibility}} partial class {{classSymbol.Name}}
-                            {
-                            {{staticTypeInfoPropertyCodeBuilder.ToString().TrimEnd()}}
-                            }
-                            """
-                        );
-                    }
+                    genClassCodeBuilder.Append(
+                        $$"""
+                        {{accessibility}} partial class {{classSymbol.Name}}
+                        {
+                        {{staticTypeInfoPropertyCodeBuilder.ToString().TrimEnd()}}
+                        }
+                        """
+                    );
 
                     context.AddSource(
                         classSymbol.Name + ".g.cs",
@@ -849,5 +822,87 @@ public class SepTypeInfoGenerator : ISourceGenerator
                 }
             }
         }
+    }
+
+    private static void ProcessGenSepParsable(
+        INamedTypeSymbol classSymbol,
+        INamedTypeSymbol spanParsableInterface,
+        GeneratorExecutionContext context)
+    {
+        // Debug diagnostic to verify this method is called
+        context.ReportDiagnostic(
+            Diagnostic.Create(
+                new DiagnosticDescriptor(
+                    "SP200",
+                    "ProcessGenSepParsable Called",
+                    $"ProcessGenSepParsable called for class '{classSymbol.Name}'",
+                    "Debug",
+                    DiagnosticSeverity.Info,
+                    true
+                ),
+                Location.None
+            )
+        );
+        StringBuilder genClassCodeBuilder = new StringBuilder();
+        genClassCodeBuilder.AppendLine(
+            $$"""
+            // <auto-generated at {{DateTimeOffset.Now:O}}/>
+            using System;
+            using Dameng.SepEx;
+
+            namespace {{classSymbol.ContainingNamespace.ToDisplayString()}};
+
+            """
+        );
+
+        var propertyReadCodeBuilder = new StringBuilder();
+        var propertyWriteCodeBuilder = new StringBuilder();
+        GeneratePropertyCode(classSymbol, classSymbol, spanParsableInterface, 
+                           propertyReadCodeBuilder, propertyWriteCodeBuilder, context);
+
+        bool hasPrimaryConstructor =
+            classSymbol.Constructors.Any(c =>
+                c.IsImplicitlyDeclared == false && c.Parameters.Length > 0
+            );
+
+        var instanceInitCode = hasPrimaryConstructor
+            ? $$"""
+                            return new {{classSymbol.ToDisplayString()}}(
+                {{propertyReadCodeBuilder.ToString().TrimEnd().TrimEnd(',')}}
+                            );
+                """
+            : $$"""
+                            return new {{classSymbol.ToDisplayString()}}() 
+                            {
+                {{propertyReadCodeBuilder.ToString().TrimEnd().TrimEnd(',')}}
+                            };
+                """;
+
+        var accessibility =
+            classSymbol.DeclaredAccessibility is Accessibility.Public
+                ? "public"
+                : "internal";
+
+        genClassCodeBuilder.Append(
+            $$"""
+            {{accessibility}} partial class {{classSymbol.Name}} : ISepParsable<{{classSymbol.ToDisplayString()}}>
+            {
+                public static {{classSymbol.ToDisplayString()}} Read(nietras.SeparatedValues.SepReader.Row readRow) 
+                {
+            {{instanceInitCode}}
+                }
+
+                public static void Write(nietras.SeparatedValues.SepWriter.Row writeRow, {{classSymbol.ToDisplayString()}} value)
+                {
+            {{propertyWriteCodeBuilder.ToString().TrimEnd()}}
+                }
+            }
+            """
+        );
+
+        context.AddSource(
+            classSymbol.Name + ".SepParsable.g.cs",
+            SourceText.From(genClassCodeBuilder.ToString(), Encoding.UTF8)
+        );
     }
 }
