@@ -142,6 +142,13 @@ public static class Utils
             // Check if it's an enum type
             bool isEnum = underlyingType.TypeKind == TypeKind.Enum;
 
+            var parsableDefine = underlyingType.AllInterfaces.FirstOrDefault(i =>
+                SymbolEqualityComparer.Default.Equals(
+                    i.OriginalDefinition,
+                    parsableInterface
+                )
+            );
+
             var spanParsableDefine = underlyingType.AllInterfaces.FirstOrDefault(i =>
                 SymbolEqualityComparer.Default.Equals(
                     i.OriginalDefinition,
@@ -164,10 +171,10 @@ public static class Utils
             {
                 tryReadMethodName = "TryReadSpanParsable";
             }else if (
-                spanParsableDefine is not null
-                && spanParsableDefine.TypeArguments.Length == 1
+                parsableDefine is not null
+                && parsableDefine.TypeArguments.Length == 1
                 && SymbolEqualityComparer.Default.Equals(
-                    spanParsableDefine.TypeArguments[0],
+                    parsableDefine.TypeArguments[0],
                     underlyingType
                 )
             )
