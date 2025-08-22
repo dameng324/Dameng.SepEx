@@ -120,7 +120,7 @@ public static class Utils
                     .GetAttributes()
                     .FirstOrDefault(o =>
                         o.AttributeClass?.ToDisplayString()
-                            .Contains("Dameng.SepEx.SepIgnoreAttribute") == true
+                            .Contains("Dameng.SepEx.SepColumnIgnoreAttribute") == true
                     )
                 is not null
             )
