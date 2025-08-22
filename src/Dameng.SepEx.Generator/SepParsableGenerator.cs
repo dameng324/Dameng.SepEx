@@ -60,29 +60,97 @@ public class SepParsableGenerator : ISourceGenerator
                     var accessibility =
                         targetType.DeclaredAccessibility is Accessibility.Public ? "public" : "internal";
 
-                    genClassCodeBuilder.Append(
-                        $$"""
-                          {{accessibility}} partial class {{targetType.Name}} : ISepParsable<{{targetType.ToDisplayString()}}>
-                          {
-                              public static {{targetType.ToDisplayString()}} Read(nietras.SeparatedValues.SepReader reader, nietras.SeparatedValues.SepReader.Row readRow) 
+                    if (targetType.ContainingType is null)
+                    {
+                        // Top-level class - use original logic
+                        genClassCodeBuilder.Append(
+                            $$"""
+                              {{accessibility}} partial class {{targetType.Name}} : ISepParsable<{{targetType.ToDisplayString()}}>
                               {
-                          {{initCode}}
-                              }
+                                  public static {{targetType.ToDisplayString()}} Read(nietras.SeparatedValues.SepReader reader, nietras.SeparatedValues.SepReader.Row readRow) 
+                                  {
+                              {{initCode}}
+                                  }
 
-                              public static void Write(nietras.SeparatedValues.SepWriter writer,nietras.SeparatedValues.SepWriter.Row writeRow, {{targetType.ToDisplayString()}} value)
-                              {
-                          {{writeCode.TrimEnd()}}
+                                  public static void Write(nietras.SeparatedValues.SepWriter writer,nietras.SeparatedValues.SepWriter.Row writeRow, {{targetType.ToDisplayString()}} value)
+                                  {
+                              {{writeCode.TrimEnd()}}
+                                  }
                               }
-                          }
-                          """
-                    );
+                              """
+                        );
+                    }
+                    else
+                    {
+                        // Nested class - build proper containment structure
+                        genClassCodeBuilder.Append(GenerateNestedClassStructure(targetType, accessibility, initCode, writeCode));
+                    }
 
+                    // Just change the filename for now as a test
+                    var fileName = targetType.ContainingType is not null 
+                        ? targetType.ToDisplayString().Replace(".", "_") + ".SepParsable.g.cs"
+                        : targetType.Name + ".SepParsable.g.cs";
+                        
                     context.AddSource(
-                        targetType.Name + ".SepParsable.g.cs",
+                        fileName,
                         SourceText.From(genClassCodeBuilder.ToString(), Encoding.UTF8)
                     );
                 }
             }
         }
+    }
+
+    private static string GenerateNestedClassStructure(INamedTypeSymbol targetType, string accessibility, string initCode, string writeCode)
+    {
+        // Build the list of containing classes from outermost to innermost
+        var containers = new List<INamedTypeSymbol>();
+        var current = targetType.ContainingType;
+        while (current is not null)
+        {
+            containers.Add(current);
+            current = current.ContainingType;
+        }
+        
+        // Reverse to get from outermost to innermost
+        containers.Reverse();
+        
+        // Build the nested structure
+        var targetClassDef = $$"""
+            {{accessibility}} partial class {{targetType.Name}} : ISepParsable<{{targetType.ToDisplayString()}}>
+            {
+                public static {{targetType.ToDisplayString()}} Read(nietras.SeparatedValues.SepReader reader, nietras.SeparatedValues.SepReader.Row readRow) 
+                {
+            {{initCode}}
+                }
+
+                public static void Write(nietras.SeparatedValues.SepWriter writer,nietras.SeparatedValues.SepWriter.Row writeRow, {{targetType.ToDisplayString()}} value)
+                {
+            {{writeCode.TrimEnd()}}
+                }
+            }
+            """;
+        
+        // Wrap in container classes
+        var result = targetClassDef;
+        for (int i = containers.Count - 1; i >= 0; i--)
+        {
+            var container = containers[i];
+            var containerAccessibility = container.DeclaredAccessibility is Accessibility.Public ? "public" : "internal";
+            var indent = new string(' ', (containers.Count - 1 - i) * 4);
+            
+            // Add indentation to current result
+            var indentedResult = string.Join("\n", 
+                result.Split('\n').Select(line => 
+                    string.IsNullOrWhiteSpace(line) ? line : "    " + line));
+            
+            result = $$"""
+                     {{indent}}{{containerAccessibility}} partial class {{container.Name}}
+                     {{indent}}{
+                     {{indentedResult}}
+                     {{indent}}}
+                     """;
+        }
+        
+        return result;
     }
 }
