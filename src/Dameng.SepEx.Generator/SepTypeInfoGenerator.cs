@@ -110,9 +110,6 @@ public class SepTypeInfoGenerator : ISourceGenerator
                             );
                         }
 
-                        var accessibility =
-                            classSymbol.DeclaredAccessibility is Accessibility.Public ? "public" : "internal";
-
                         StringBuilder staticTypeInfoPropertyCodeBuilder = new();
 
                         foreach (var targetTypeName in targetTypeNames)
@@ -126,7 +123,7 @@ public class SepTypeInfoGenerator : ISourceGenerator
 
                         genClassCodeBuilder.Append(
                             $$"""
-                              {{accessibility}} partial class {{classSymbol.Name}}
+                              partial class {{classSymbol.Name}}
                               {
                               {{staticTypeInfoPropertyCodeBuilder.ToString().TrimEnd()}}
                               }
