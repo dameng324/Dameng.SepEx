@@ -14,9 +14,9 @@ A high-performance source generator for working with separated values (CSV/TSV) 
 
 Install the NuGet packages:
 
-```xml
-<PackageReference Include="Dameng.SepEx" Version="1.0.0" />
-<PackageReference Include="Dameng.SepEx.Generator" Version="1.0.0" />
+```bash
+dotnet add package Dameng.SepEx
+dotnet add package Dameng.SepEx.Generator
 ```
 
 ## Quick Start
