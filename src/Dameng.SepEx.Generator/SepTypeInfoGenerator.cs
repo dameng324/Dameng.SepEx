@@ -12,6 +12,308 @@ public class SepTypeInfoGenerator : ISourceGenerator
 {
     public void Initialize(GeneratorInitializationContext context) { }
 
+    private static void GeneratePropertyCode(
+        INamedTypeSymbol classSymbol, 
+        INamedTypeSymbol targetType, 
+        INamedTypeSymbol spanParsableInterface,
+        StringBuilder propertyReadCodeBuilder, 
+        StringBuilder propertyWriteCodeBuilder, 
+        GeneratorExecutionContext context)
+    {
+        bool hasPrimaryConstructor =
+            targetType.Constructors.Any(c =>
+                c.IsImplicitlyDeclared == false && c.Parameters.Length > 0
+            );
+
+        int propertyIndex = 0;
+
+        foreach (var member in targetType.GetMembers())
+        {
+            if (member is not (IPropertySymbol or IFieldSymbol))
+            {
+                continue;
+            }
+
+            var memberName = member.Name;
+            var memberType =
+                member switch
+                {
+                    IPropertySymbol property => property.Type,
+                    IFieldSymbol field => field.Type,
+                    _ => null,
+                };
+
+            if (memberType is null)
+            {
+                continue;
+            }
+
+            var isWritable =
+                member switch
+                {
+                    IPropertySymbol property => property.SetMethod is not null,
+                    IFieldSymbol field => !field.IsReadOnly,
+                    _ => false,
+                };
+
+            var isReadable =
+                member switch
+                {
+                    IPropertySymbol property => property.GetMethod is not null,
+                    IFieldSymbol field => true,
+                    _ => false,
+                };
+
+            var ignoreAttribute = member.GetAttributes()
+                .FirstOrDefault(o =>
+                    o.AttributeClass?.ToDisplayString()
+                        .Equals("Dameng.SepEx.SepIgnoreAttribute")
+                    == true
+                );
+            if (ignoreAttribute is not null)
+            {
+                continue;
+            }
+
+            var isNullable =
+                memberType.OriginalDefinition.SpecialType
+                    == SpecialType.System_Nullable_T
+                || memberType.CanBeReferencedByName;
+
+            var underlyingType = isNullable
+                ? memberType.OriginalDefinition.SpecialType
+                    == SpecialType.System_Nullable_T
+                    ? ((INamedTypeSymbol)memberType).TypeArguments[0]
+                    : memberType
+                : memberType;
+
+            if (underlyingType.TypeKind == TypeKind.Enum)
+            {
+                var defaultValueAttributeValue = member
+                    .GetAttributes()
+                    .FirstOrDefault(o =>
+                        o.AttributeClass?.ToDisplayString()
+                            .Equals("Dameng.SepEx.SepDefaultValueAttribute")
+                        == true
+                    )
+                    ?.ConstructorArguments.FirstOrDefault()
+                    .Value;
+                var defaultValue =
+                    defaultValueAttributeValue is null
+                        ? $"default({memberType.ToDisplayString()})"
+                        : defaultValueAttributeValue.ToString();
+
+                var columnName =
+                    member
+                        .GetAttributes()
+                        .FirstOrDefault(o =>
+                            o.AttributeClass?.ToDisplayString()
+                                .Equals("Dameng.SepEx.SepColumnNameAttribute")
+                            == true
+                        )
+                        ?.ConstructorArguments.FirstOrDefault()
+                        .Value?.ToString() ?? memberName;
+                var columnIndex = member
+                    .GetAttributes()
+                    .FirstOrDefault(o =>
+                        o.AttributeClass?.ToDisplayString()
+                            .Equals("Dameng.SepEx.SepColumnIndexAttribute")
+                        == true
+                    )
+                    ?.ConstructorArguments.FirstOrDefault()
+                    .Value?.ToString();
+
+                string readColKey = columnIndex ?? $"\"{columnName}\"";
+                string writeColKey = $"\"{columnName}\"";
+
+                if (isWritable)
+                {
+                    if (hasPrimaryConstructor)
+                    {
+                        propertyReadCodeBuilder.AppendLine(
+                            $"            System.Enum.TryParse<{underlyingType.ToDisplayString()}>(readRow[{readColKey}].ToString(), out var v{propertyIndex}) ? v{propertyIndex} : {defaultValue},"
+                        );
+                    }
+                    else
+                    {
+                        propertyReadCodeBuilder.AppendLine(
+                            $"            {memberName} = System.Enum.TryParse<{underlyingType.ToDisplayString()}>(readRow[{readColKey}].ToString(), out var v{propertyIndex}) ? v{propertyIndex} : {defaultValue},"
+                        );
+                    }
+                }
+
+                if (isReadable)
+                {
+                    string valueString;
+                    if (isNullable)
+                    {
+                        valueString =
+                            $"Set(value.{memberName}?.ToString() ?? string.Empty)";
+                    }
+                    else
+                    {
+                        valueString = $"Set(value.{memberName}.ToString())";
+                    }
+
+                    propertyWriteCodeBuilder.AppendLine(
+                        $"        writeRow[{writeColKey}].{valueString};"
+                    );
+                }
+            }
+            else
+            {
+                var spanParsableDefine =
+                    underlyingType.AllInterfaces.FirstOrDefault(i =>
+                        SymbolEqualityComparer.Default.Equals(
+                            i.OriginalDefinition,
+                            spanParsableInterface
+                        )
+                    );
+
+                if (
+                    spanParsableDefine is not null
+                    && spanParsableDefine.TypeArguments.Length == 1
+                    && SymbolEqualityComparer.Default.Equals(
+                        spanParsableDefine.TypeArguments[0],
+                        underlyingType
+                    )
+                )
+                {
+                    propertyIndex++;
+                    var defaultValueAttributeValue = member
+                        .GetAttributes()
+                        .FirstOrDefault(o =>
+                            o.AttributeClass?.ToDisplayString()
+                                .Equals("Dameng.SepEx.SepDefaultValueAttribute")
+                            == true
+                        )
+                        ?.ConstructorArguments.FirstOrDefault()
+                        .Value;
+                    var defaultValue =
+                        memberType.SpecialType == SpecialType.System_String
+                            ? defaultValueAttributeValue is null
+                                ? "string.Empty"
+                                : $"\"{defaultValueAttributeValue}\""
+                            : isNullable
+                                ? defaultValueAttributeValue is null
+                                    ? "null"
+                                    : $"({underlyingType.ToDisplayString()}?){defaultValueAttributeValue}"
+                                : defaultValueAttributeValue is null
+                                    ? "default("
+                                        + memberType.ToDisplayString()
+                                        + ")"
+                                    : defaultValueAttributeValue.ToString();
+
+                    var columnName =
+                        member
+                            .GetAttributes()
+                            .FirstOrDefault(o =>
+                                o.AttributeClass?.ToDisplayString()
+                                    .Equals("Dameng.SepEx.SepColumnNameAttribute")
+                                == true
+                            )
+                            ?.ConstructorArguments.FirstOrDefault()
+                            .Value?.ToString() ?? memberName;
+                    var columnIndex = member
+                        .GetAttributes()
+                        .FirstOrDefault(o =>
+                            o.AttributeClass?.ToDisplayString()
+                                .Equals("Dameng.SepEx.SepColumnIndexAttribute")
+                            == true
+                        )
+                        ?.ConstructorArguments.FirstOrDefault()
+                        .Value?.ToString();
+
+                    string readColKey = columnIndex ?? $"\"{columnName}\"";
+                    string writeColKey = $"\"{columnName}\"";
+
+                    if (isWritable)
+                    {
+                        if (hasPrimaryConstructor)
+                        {
+                            propertyReadCodeBuilder.AppendLine(
+                                $"            readRow[{readColKey}].TryParse<{underlyingType.ToDisplayString()}>(out var v{propertyIndex}) ? v{propertyIndex} : {defaultValue},"
+                            );
+                        }
+                        else
+                        {
+                            propertyReadCodeBuilder.AppendLine(
+                                $"            {memberName} = readRow[{readColKey}].TryParse<{underlyingType.ToDisplayString()}>(out var v{propertyIndex}) ? v{propertyIndex} : {defaultValue},"
+                            );
+                        }
+                    }
+
+                    if (isReadable)
+                    {
+                        string valueString;
+                        if (
+                            (isNullable ? underlyingType : memberType).SpecialType
+                            == SpecialType.System_String
+                        )
+                        {
+                            if (isNullable)
+                            {
+                                valueString =
+                                    $"Set(value.{memberName}?.ToString() ?? string.Empty)";
+                            }
+                            else
+                            {
+                                valueString = $"Set(value.{memberName})";
+                            }
+                        }
+                        else
+                        {
+                            var format = member
+                                .GetAttributes()
+                                .FirstOrDefault(o =>
+                                    o.AttributeClass?.ToDisplayString()
+                                        .Equals(
+                                            "Dameng.SepEx.SepColumnFormatAttribute"
+                                        ) == true
+                                )
+                                ?.ConstructorArguments.FirstOrDefault()
+                                .Value?.ToString();
+
+                            if (isNullable)
+                            {
+                                // For now, always use Set with ToString for nullable types to avoid Format constraints
+                                valueString = string.IsNullOrWhiteSpace(format)
+                                    ? $"Set(value.{memberName}?.ToString() ?? string.Empty)"
+                                    : $"Set(value.{memberName}?.ToString(\"{format}\") ?? string.Empty)";
+                            }
+                            else
+                            {
+                                valueString = string.IsNullOrWhiteSpace(format)
+                                    ? $"Format(value.{memberName})"
+                                    : $"Set(value.{memberName}.ToString(\"{format}\"))";
+                            }
+                        }
+
+                        propertyWriteCodeBuilder.AppendLine(
+                            $"        writeRow[{writeColKey}].{valueString};"
+                        );
+                    }
+                }
+                else
+                {
+                    context.ReportDiagnostic(
+                        Diagnostic.Create(
+                            new DiagnosticDescriptor(
+                                "SP002",
+                                "Unsupported Property Type",
+                                $"Property '{member.Name}' of type '{memberType.ToDisplayString()}' is not supported. Only ISpanParsable<T> and enum types are supported.",
+                                "Usage",
+                                DiagnosticSeverity.Error,
+                                true
+                            ),
+                            Location.None
+                        )
+                    );
+                }
+            }
+        }
+    }
+
     public void Execute(GeneratorExecutionContext context)
     {
         // #if DEBUG
@@ -58,6 +360,8 @@ public class SepTypeInfoGenerator : ISourceGenerator
                 }
 
                 var attributes = classSymbol.GetAttributes();
+                
+                // Handle GenSepTypeInfo attributes
                 var typeInfoAttributes = attributes
                     .Where(attribute =>
                         attribute
@@ -65,7 +369,17 @@ public class SepTypeInfoGenerator : ISourceGenerator
                             .StartsWith("Dameng.SepEx.GenSepTypeInfoAttribute<")
                     )
                     .ToArray();
-                if (typeInfoAttributes.Length <= 0)
+                    
+                // Handle GenSepParsable attribute
+                var genParsableAttribute = attributes
+                    .FirstOrDefault(attribute =>
+                        attribute
+                            .AttributeClass!.ToDisplayString()
+                            .Equals("Dameng.SepEx.GenSepParsableAttribute")
+                    );
+                
+                // Skip if no relevant attributes found
+                if (typeInfoAttributes.Length <= 0 && genParsableAttribute is null)
                 {
                     continue;
                 }
@@ -456,14 +770,61 @@ public class SepTypeInfoGenerator : ISourceGenerator
                         );
                     }
 
-                    genClassCodeBuilder.Append(
-                        $$"""
-                        {{accessibility}} partial class {{classSymbol.Name}}
-                        {
-                        {{staticTypeInfoPropertyCodeBuilder.ToString().TrimEnd()}}
-                        }
-                        """
-                    );
+                    // Generate ISepParsable implementation if GenSepParsable attribute is present
+                    if (genParsableAttribute is not null)
+                    {
+                        var propertyReadCodeBuilder = new StringBuilder();
+                        var propertyWriteCodeBuilder = new StringBuilder();
+                        GeneratePropertyCode(classSymbol, classSymbol, spanParsableInterface, 
+                                           propertyReadCodeBuilder, propertyWriteCodeBuilder, context);
+
+                        bool hasPrimaryConstructor =
+                            classSymbol.Constructors.Any(c =>
+                                c.IsImplicitlyDeclared == false && c.Parameters.Length > 0
+                            );
+
+                        var instanceInitCode = hasPrimaryConstructor
+                            ? $$"""
+                                            return new {{classSymbol.ToDisplayString()}}(
+                                {{propertyReadCodeBuilder.ToString().TrimEnd().TrimEnd(',')}}
+                                            );
+                                """
+                            : $$"""
+                                            return new {{classSymbol.ToDisplayString()}}() 
+                                            {
+                                {{propertyReadCodeBuilder.ToString().TrimEnd().TrimEnd(',')}}
+                                            };
+                                """;
+
+                        genClassCodeBuilder.Append(
+                            $$"""
+                            {{accessibility}} partial class {{classSymbol.Name}} : ISepParsable<{{classSymbol.ToDisplayString()}}>
+                            {
+                                public static {{classSymbol.ToDisplayString()}} Read(nietras.SeparatedValues.SepReader.Row readRow) 
+                                {
+                            {{instanceInitCode}}
+                                }
+
+                                public static void Write(nietras.SeparatedValues.SepWriter.Row writeRow, {{classSymbol.ToDisplayString()}} value)
+                                {
+                            {{propertyWriteCodeBuilder.ToString().TrimEnd()}}
+                                }
+                            }
+                            
+                            """
+                        );
+                    }
+                    else
+                    {
+                        genClassCodeBuilder.Append(
+                            $$"""
+                            {{accessibility}} partial class {{classSymbol.Name}}
+                            {
+                            {{staticTypeInfoPropertyCodeBuilder.ToString().TrimEnd()}}
+                            }
+                            """
+                        );
+                    }
 
                     context.AddSource(
                         classSymbol.Name + ".g.cs",

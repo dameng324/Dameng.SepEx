@@ -8,6 +8,12 @@ namespace Dameng.SepEx;
 [AttributeUsage(AttributeTargets.Class,AllowMultiple = true)]
 public class GenSepTypeInfoAttribute<T> : Attribute;
 
+/// <summary>
+/// An attribute that marks class to generate ISepParsable&lt;TSelf&gt; implementation.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class)]
+public class GenSepParsableAttribute : Attribute;
+
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
 public class SepColumnNameAttribute(string name) : Attribute;
 
