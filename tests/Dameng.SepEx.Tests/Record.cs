@@ -29,26 +29,32 @@ public partial class Level1
     }
 }
 
-public struct Record2
+[GenSepParsable]
+public partial struct Record2
 {
     public string A { get; set; }
 }
 
-public record Record3
+[GenSepParsable]
+public partial record Record3
 {
     public string A { get; set; } = string.Empty;
 }
 
-public record struct Record4
+[GenSepParsable]
+public partial record struct Record4
 {
     public string A { get; set; }
 }
 
-public readonly struct Record5
+[GenSepParsable]
+public readonly partial struct Record5
 {
     public string A { get; init; }
 }
-public record Record6(string A,string B,double D,float E);
+
+[GenSepParsable]
+public partial record Record6(string A,string B,double D,float E);
 
 [GenSepTypeInfo<Level1.Level2.Record>()]
 [GenSepTypeInfo<Record2>()]
