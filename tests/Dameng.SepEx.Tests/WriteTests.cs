@@ -51,10 +51,10 @@ public class WriteTests
         var result = writer.ToString();
         Console.Write(result);
         var expected = """
-            String,Int,Double,Bool,OptionalBoolean,PlatformID,OptionalPlatformID
-            "B,b",42,0.000000,True,,Win32NT,
+            String,Int,Double,OptionDouble,Bool,OptionalBoolean,PlatformID,OptionalPlatformID
+            "B,b",42,0.000000,,True,,Win32NT,
             "Al
-            ice",100,0.000000,False,,Unix,Unix
+            ice",100,0.000000,,False,,Unix,Unix
 
             """;
         result.Should().Be(expected);

@@ -34,6 +34,30 @@ public static class Utils
             );
         }
 
+        var parsableInterface = context.Compilation.GetTypeByMetadataName(
+            "System.ISpanParsable`1"
+        );
+        if (parsableInterface is null)
+        {
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    new DiagnosticDescriptor(
+                        "SP001",
+                        "Missing ISpanParsable",
+                        "The ISpanParsable interface is not available. Ensure you are targeting .NET 6 or later.",
+                        "Usage",
+                        DiagnosticSeverity.Error,
+                        true
+                    ),
+                    Location.None
+                )
+            );
+
+            throw new Exception(
+                "The ISpanParsable interface is not available. Ensure you are targeting .NET 6 or later."
+            );
+        }
+
         var spanFormattableInterface = context.Compilation.GetTypeByMetadataName(
             "System.ISpanFormattable"
         );
@@ -63,8 +87,8 @@ public static class Utils
 
         bool hasPrimaryConstructor =
             targetType.InstanceConstructors.FirstOrDefault(c =>
-                c.IsImplicitlyDeclared == false && c.Parameters.Length > 0
-            )
+                    c.IsImplicitlyDeclared == false && c.Parameters.Length > 0
+                )
                 is not null;
 
         int propertyIndex = 0;
@@ -118,225 +142,163 @@ public static class Utils
             // Check if it's an enum type
             bool isEnum = underlyingType.TypeKind == TypeKind.Enum;
 
+            var spanParsableDefine = underlyingType.AllInterfaces.FirstOrDefault(i =>
+                SymbolEqualityComparer.Default.Equals(
+                    i.OriginalDefinition,
+                    parsableInterface
+                )
+            );
+            string tryReadMethodName;
             if (isEnum)
             {
-                // Handle enum types specially
-                propertyIndex++;
-
-                var defaultValueAttributeValue = member
-                    .GetAttributes()
-                    .FirstOrDefault(o =>
-                        o.AttributeClass?.ToDisplayString()
-                            .Equals("Dameng.SepEx.SepDefaultValueAttribute") == true
-                    )
-                    ?.ConstructorArguments.FirstOrDefault()
-                    .Value;
-
-                var defaultValue = isNullable
-                    ? defaultValueAttributeValue is null
-                        ? "null"
-                        : $"({underlyingType.ToDisplayString()}?){defaultValueAttributeValue}"
-                    : defaultValueAttributeValue is null
-                        ? "default(" + memberType.ToDisplayString() + ")"
-                        : defaultValueAttributeValue.ToString();
-
-                var columnName =
-                    member
-                        .GetAttributes()
-                        .FirstOrDefault(o =>
-                            o.AttributeClass?.ToDisplayString()
-                                .Equals("Dameng.SepEx.SepColumnNameAttribute") == true
-                        )
-                        ?.ConstructorArguments.FirstOrDefault()
-                        .Value?.ToString() ?? memberName;
-                var columnIndex = member
-                    .GetAttributes()
-                    .FirstOrDefault(o =>
-                        o.AttributeClass?.ToDisplayString()
-                            .Equals("Dameng.SepEx.SepColumnIndexAttribute") == true
-                    )
-                    ?.ConstructorArguments.FirstOrDefault()
-                    .Value?.ToString();
-
-                string readColKey = columnIndex ?? $"\"{columnName}\"";
-                string writeColKey = $"\"{columnName}\"";
-
-                if (isWritable)
-                {
-                    if (hasPrimaryConstructor)
-                    {
-                        propertyReadCodeBuilder.AppendLine(
-                            $"            System.Enum.TryParse<{underlyingType.ToDisplayString()}>(Dameng.SepEx.Parser.UnescapeSepField(readRow[{readColKey}].Span), out var v{propertyIndex}) ? v{propertyIndex} : {defaultValue},"
-                        );
-                    }
-                    else
-                    {
-                        propertyReadCodeBuilder.AppendLine(
-                            $"            {memberName} = System.Enum.TryParse<{underlyingType.ToDisplayString()}>(Dameng.SepEx.Parser.UnescapeSepField(readRow[{readColKey}].Span), out var v{propertyIndex}) ? v{propertyIndex} : {defaultValue},"
-                        );
-                    }
-                }
-
-                if (isReadable)
-                {
-                    string valueCode;
-                    if (isNullable)
-                    {
-                        valueCode = $"Set(value.{memberName}?.ToString() ?? string.Empty)";
-                    }
-                    else
-                    {
-                        valueCode = $"Set(value.{memberName}.ToString())";
-                    }
-
-                    propertyWriteCodeBuilder.AppendLine(
-                        $"        writeRow[{writeColKey}].{valueCode};"
-                    );
-                }
+                tryReadMethodName = "TryReadEnum";
+            }else
+            if (
+                spanParsableDefine is not null
+                && spanParsableDefine.TypeArguments.Length == 1
+                && SymbolEqualityComparer.Default.Equals(
+                    spanParsableDefine.TypeArguments[0],
+                    underlyingType
+                )
+            )
+            {
+                tryReadMethodName = "TryReadSpanParsable";
+            }else if (
+                spanParsableDefine is not null
+                && spanParsableDefine.TypeArguments.Length == 1
+                && SymbolEqualityComparer.Default.Equals(
+                    spanParsableDefine.TypeArguments[0],
+                    underlyingType
+                )
+            )
+            {
+                tryReadMethodName = "TryReadSpanParsable";
             }
             else
             {
-                var spanParsableDefine = underlyingType.AllInterfaces.FirstOrDefault(i =>
-                    SymbolEqualityComparer.Default.Equals(
-                        i.OriginalDefinition,
-                        spanParsableInterface
+                context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        new DiagnosticDescriptor(
+                            "SP002",
+                            "Unsupported Property Type",
+                            $"The property '{memberName}' of type '{memberType}' is not support ISpanParsable<TSelf>/IParsable<TSelf>.",
+                            "Usage",
+                            DiagnosticSeverity.Error,
+                            true
+                        ),
+                        Location.None
                     )
                 );
+                break;
+            }
+            propertyIndex++;
 
-                if (
-                    spanParsableDefine is not null
-                    && spanParsableDefine.TypeArguments.Length == 1
-                    && SymbolEqualityComparer.Default.Equals(
-                        spanParsableDefine.TypeArguments[0],
-                        underlyingType
-                    )
+            var defaultValueAttributeValue = member
+                .GetAttributes()
+                .FirstOrDefault(o =>
+                    o.AttributeClass?.ToDisplayString()
+                        .Equals("Dameng.SepEx.SepDefaultValueAttribute") == true
                 )
+                ?.ConstructorArguments.FirstOrDefault()
+                .Value;
+            var defaultValue =
+                memberType.SpecialType == SpecialType.System_String
+                    ? defaultValueAttributeValue is null
+                        ? "string.Empty"
+                        : $"\"{defaultValueAttributeValue}\""
+                    : isNullable
+                        ? defaultValueAttributeValue is null
+                            ? "null"
+                            : $"({underlyingType.ToDisplayString()}?){defaultValueAttributeValue}"
+                        : defaultValueAttributeValue is null
+                            ? "default(" + memberType.ToDisplayString() + ")"
+                            : defaultValueAttributeValue.ToString();
+
+            var columnName =
+                member
+                    .GetAttributes()
+                    .FirstOrDefault(o =>
+                        o.AttributeClass?.ToDisplayString()
+                            .Equals("Dameng.SepEx.SepColumnNameAttribute") == true
+                    )
+                    ?.ConstructorArguments.FirstOrDefault()
+                    .Value?.ToString() ?? memberName;
+            var columnIndex = member
+                .GetAttributes()
+                .FirstOrDefault(o =>
+                    o.AttributeClass?.ToDisplayString()
+                        .Equals("Dameng.SepEx.SepColumnIndexAttribute") == true
+                )
+                ?.ConstructorArguments.FirstOrDefault()
+                .Value?.ToString();
+
+            string readColKey = columnIndex ?? $"\"{columnName}\"";
+            string writeColKey = $"\"{columnName}\"";
+
+            if (isWritable)
+            {
+                var valueCode =
+                    underlyingType.SpecialType == SpecialType.System_String
+                        ? $"Dameng.SepEx.Parser.UnescapeSepField(readRow[{readColKey}].Span).ToString()"
+                        : $"Dameng.SepEx.Parser.{tryReadMethodName}<{underlyingType.ToDisplayString()}>(reader,readRow,{readColKey},out var v{propertyIndex})?v{propertyIndex}:{defaultValue}";
+
+                propertyReadCodeBuilder.AppendLine(
+                    hasPrimaryConstructor
+                        ? $"            {valueCode},"
+                        : $"            {memberName} = {valueCode},"
+                );
+            }
+
+            if (isReadable)
+            {
+                string valueString;
+                if (underlyingType.SpecialType == SpecialType.System_String)
                 {
-                    propertyIndex++;
-
-                    var defaultValueAttributeValue = member
-                        .GetAttributes()
-                        .FirstOrDefault(o =>
-                            o.AttributeClass?.ToDisplayString()
-                                .Equals("Dameng.SepEx.SepDefaultValueAttribute") == true
-                        )
-                        ?.ConstructorArguments.FirstOrDefault()
-                        .Value;
-                    var defaultValue =
-                        memberType.SpecialType == SpecialType.System_String
-                            ? defaultValueAttributeValue is null
-                                ? "string.Empty"
-                                : $"\"{defaultValueAttributeValue}\""
-                            : isNullable
-                                ? defaultValueAttributeValue is null
-                                    ? "null"
-                                    : $"({underlyingType.ToDisplayString()}?){defaultValueAttributeValue}"
-                                : defaultValueAttributeValue is null
-                                    ? "default(" + memberType.ToDisplayString() + ")"
-                                    : defaultValueAttributeValue.ToString();
-
-                    var columnName =
-                        member
-                            .GetAttributes()
-                            .FirstOrDefault(o =>
-                                o.AttributeClass?.ToDisplayString()
-                                    .Equals("Dameng.SepEx.SepColumnNameAttribute") == true
-                            )
-                            ?.ConstructorArguments.FirstOrDefault()
-                            .Value?.ToString() ?? memberName;
-                    var columnIndex = member
-                        .GetAttributes()
-                        .FirstOrDefault(o =>
-                            o.AttributeClass?.ToDisplayString()
-                                .Equals("Dameng.SepEx.SepColumnIndexAttribute") == true
-                        )
-                        ?.ConstructorArguments.FirstOrDefault()
-                        .Value?.ToString();
-
-                    string readColKey = columnIndex ?? $"\"{columnName}\"";
-                    string writeColKey = $"\"{columnName}\"";
-
-                    if (isWritable)
+                    if (isNullable)
                     {
-                        var valueCode =
-                            underlyingType.SpecialType == SpecialType.System_String
-                                ? $"Dameng.SepEx.Parser.UnescapeSepField(readRow[{readColKey}].Span).ToString()"
-                                : $"{underlyingType.ToDisplayString()}.TryParse(Dameng.SepEx.Parser.UnescapeSepField(readRow[{readColKey}].Span),out var v{propertyIndex}) ? v{propertyIndex} : {defaultValue}";
-                        propertyReadCodeBuilder.AppendLine(
-                            hasPrimaryConstructor
-                                ? $"            {valueCode},"
-                                : $"            {memberName} = {valueCode},"
-                        );
+                        valueString = $"value.{memberName}?.ToString() ?? string.Empty";
                     }
-
-                    if (isReadable)
+                    else
                     {
-                        string valueString;
-                        if (underlyingType.SpecialType == SpecialType.System_String)
-                        {
-                            if (isNullable)
-                            {
-                                valueString = $"value.{memberName}?.ToString() ?? string.Empty";
-                            }
-                            else
-                            {
-                                valueString = $"value.{memberName}";
-                            }
-                        }
-                        else
-                        {
-                            var format = member
-                                .GetAttributes()
-                                .FirstOrDefault(o =>
-                                    o.AttributeClass?.ToDisplayString()
-                                        .Equals("Dameng.SepEx.SepColumnFormatAttribute") == true
-                                )
-                                ?.ConstructorArguments.FirstOrDefault()
-                                .Value?.ToString();
-
-                            if (isNullable)
-                            {
-                                // For now, always use Set with ToString for nullable types to avoid Format constraints
-                                valueString = string.IsNullOrWhiteSpace(format)
-                                    ? $"value.{memberName}?.ToString() ?? string.Empty"
-                                    : $"value.{memberName}?.ToString(\"{format}\") ?? string.Empty";
-                            }
-                            else
-                            {
-                                var spanFormattableDefine =
-                                    underlyingType.AllInterfaces.FirstOrDefault(i =>
-                                        SymbolEqualityComparer.Default.Equals(
-                                            i.OriginalDefinition,
-                                            spanFormattableInterface
-                                        )
-                                    );
-                                valueString = string.IsNullOrWhiteSpace(format)
-                                    ? $"value.{memberName}.ToString()"
-                                    : $"value.{memberName}.ToString(\"{format}\")";
-                            }
-                        }
-
-                        propertyWriteCodeBuilder.AppendLine(
-                            $"        writeRow[{writeColKey}].Set(Dameng.SepEx.Parser.EscapeSepField({valueString},writer.Spec.Sep.Separator));"
-                        );
+                        valueString = $"value.{memberName}";
                     }
                 }
                 else
                 {
-                    context.ReportDiagnostic(
-                        Diagnostic.Create(
-                            new DiagnosticDescriptor(
-                                "SP002",
-                                "Unsupported Property Type",
-                                $"The property '{memberName}' of type '{memberType}' is not support ISpanParsable<TSelf>.",
-                                "Usage",
-                                DiagnosticSeverity.Error,
-                                true
-                            ),
-                            Location.None
+                    var format = member
+                        .GetAttributes()
+                        .FirstOrDefault(o =>
+                            o.AttributeClass?.ToDisplayString()
+                                .Equals("Dameng.SepEx.SepColumnFormatAttribute") == true
                         )
-                    );
+                        ?.ConstructorArguments.FirstOrDefault()
+                        .Value?.ToString();
+
+                    if (isNullable)
+                    {
+                        // For now, always use Set with ToString for nullable types to avoid Format constraints
+                        valueString = string.IsNullOrWhiteSpace(format)
+                            ? $"value.{memberName}?.ToString() ?? string.Empty"
+                            : $"value.{memberName}?.ToString(\"{format}\") ?? string.Empty";
+                    }
+                    else
+                    {
+                        var spanFormattableDefine =
+                            underlyingType.AllInterfaces.FirstOrDefault(i =>
+                                SymbolEqualityComparer.Default.Equals(
+                                    i.OriginalDefinition,
+                                    spanFormattableInterface
+                                )
+                            );
+                        valueString = string.IsNullOrWhiteSpace(format)
+                            ? $"value.{memberName}.ToString()"
+                            : $"value.{memberName}.ToString(\"{format}\")";
+                    }
                 }
+
+                propertyWriteCodeBuilder.AppendLine(
+                    $"        writeRow[{writeColKey}].Set(Dameng.SepEx.Parser.EscapeSepField({valueString},writer.Spec.Sep.Separator));"
+                );
             }
         }
 

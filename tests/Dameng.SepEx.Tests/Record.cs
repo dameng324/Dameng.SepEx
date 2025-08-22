@@ -12,6 +12,8 @@ public partial class Record
     public int Int;
     [SepColumnFormat("0.000000")]
     public double Double { get; set; }
+    [SepColumnFormat("0.000000")]
+    public double? OptionalDouble { get; set; }
     [SepIgnore]
     public float Ignore { get; set; }
     [SepColumnName("Bool")]
