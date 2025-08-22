@@ -1,3 +1,5 @@
+using nietras.SeparatedValues;
+
 namespace Dameng.SepEx;
 
 /// <summary>
@@ -6,6 +8,6 @@ namespace Dameng.SepEx;
 /// <typeparam name="TSelf"></typeparam>
 public interface ISepParsable<TSelf> where TSelf : ISepParsable<TSelf>
 {
-    public static abstract TSelf Read(nietras.SeparatedValues.SepReader.Row readRow);
-    public static abstract void Write(nietras.SeparatedValues.SepWriter.Row writeRow, TSelf value);
+    public static abstract TSelf Read(SepReader reader,SepReader.Row readRow);
+    public static abstract void Write(SepWriter writer,SepWriter.Row writeRow, TSelf value);
 }

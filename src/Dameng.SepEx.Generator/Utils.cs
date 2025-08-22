@@ -7,17 +7,64 @@ public static class Utils
 {
     internal static (string ReadCode, string WriteCode) GeneratePropertyCode(
         INamedTypeSymbol targetType,
-        INamedTypeSymbol spanParsableInterface,
         GeneratorExecutionContext context
     )
     {
+        var spanParsableInterface = context.Compilation.GetTypeByMetadataName(
+            "System.ISpanParsable`1"
+        );
+        if (spanParsableInterface is null)
+        {
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    new DiagnosticDescriptor(
+                        "SP001",
+                        "Missing ISpanParsable",
+                        "The ISpanParsable interface is not available. Ensure you are targeting .NET 6 or later.",
+                        "Usage",
+                        DiagnosticSeverity.Error,
+                        true
+                    ),
+                    Location.None
+                )
+            );
+
+            throw new Exception(
+                "The ISpanParsable interface is not available. Ensure you are targeting .NET 6 or later."
+            );
+        }
+
+        var spanFormattableInterface = context.Compilation.GetTypeByMetadataName(
+            "System.ISpanFormattable"
+        );
+        if (spanFormattableInterface is null)
+        {
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    new DiagnosticDescriptor(
+                        "SP001",
+                        "Missing ISpanFormattable",
+                        "The ISpanFormattable interface is not available. Ensure you are targeting .NET 6 or later.",
+                        "Usage",
+                        DiagnosticSeverity.Error,
+                        true
+                    ),
+                    Location.None
+                )
+            );
+
+            throw new Exception(
+                "The ISpanFormattable interface is not available. Ensure you are targeting .NET 6 or later."
+            );
+        }
+
         StringBuilder propertyReadCodeBuilder = new StringBuilder();
         StringBuilder propertyWriteCodeBuilder = new StringBuilder();
 
         bool hasPrimaryConstructor =
             targetType.InstanceConstructors.FirstOrDefault(c =>
-                    c.IsImplicitlyDeclared == false && c.Parameters.Length > 0
-                )
+                c.IsImplicitlyDeclared == false && c.Parameters.Length > 0
+            )
                 is not null;
 
         int propertyIndex = 0;
@@ -119,31 +166,31 @@ public static class Utils
                     if (hasPrimaryConstructor)
                     {
                         propertyReadCodeBuilder.AppendLine(
-                            $"            System.Enum.TryParse<{underlyingType.ToDisplayString()}>(readRow[{readColKey}].ToString(), out var v{propertyIndex}) ? v{propertyIndex} : {defaultValue},"
+                            $"            System.Enum.TryParse<{underlyingType.ToDisplayString()}>(Dameng.SepEx.Parser.UnescapeSepField(readRow[{readColKey}].Span), out var v{propertyIndex}) ? v{propertyIndex} : {defaultValue},"
                         );
                     }
                     else
                     {
                         propertyReadCodeBuilder.AppendLine(
-                            $"            {memberName} = System.Enum.TryParse<{underlyingType.ToDisplayString()}>(readRow[{readColKey}].ToString(), out var v{propertyIndex}) ? v{propertyIndex} : {defaultValue},"
+                            $"            {memberName} = System.Enum.TryParse<{underlyingType.ToDisplayString()}>(Dameng.SepEx.Parser.UnescapeSepField(readRow[{readColKey}].Span), out var v{propertyIndex}) ? v{propertyIndex} : {defaultValue},"
                         );
                     }
                 }
 
                 if (isReadable)
                 {
-                    string valueString;
+                    string valueCode;
                     if (isNullable)
                     {
-                        valueString = $"Set(value.{memberName}?.ToString() ?? string.Empty)";
+                        valueCode = $"Set(value.{memberName}?.ToString() ?? string.Empty)";
                     }
                     else
                     {
-                        valueString = $"Set(value.{memberName}.ToString())";
+                        valueCode = $"Set(value.{memberName}.ToString())";
                     }
 
                     propertyWriteCodeBuilder.AppendLine(
-                        $"        writeRow[{writeColKey}].{valueString};"
+                        $"        writeRow[{writeColKey}].{valueCode};"
                     );
                 }
             }
@@ -211,36 +258,29 @@ public static class Utils
 
                     if (isWritable)
                     {
-                        if (hasPrimaryConstructor)
-                        {
-                            propertyReadCodeBuilder.AppendLine(
-                                $"            readRow[{readColKey}].TryParse<{underlyingType.ToDisplayString()}>(out var v{propertyIndex}) ? v{propertyIndex} : {defaultValue},"
-                            );
-                        }
-                        else
-                        {
-                            propertyReadCodeBuilder.AppendLine(
-                                $"            {memberName} = readRow[{readColKey}].TryParse<{underlyingType.ToDisplayString()}>(out var v{propertyIndex}) ? v{propertyIndex} : {defaultValue},"
-                            );
-                        }
+                        var valueCode =
+                            underlyingType.SpecialType == SpecialType.System_String
+                                ? $"Dameng.SepEx.Parser.UnescapeSepField(readRow[{readColKey}].Span).ToString()"
+                                : $"{underlyingType.ToDisplayString()}.TryParse(Dameng.SepEx.Parser.UnescapeSepField(readRow[{readColKey}].Span),out var v{propertyIndex}) ? v{propertyIndex} : {defaultValue}";
+                        propertyReadCodeBuilder.AppendLine(
+                            hasPrimaryConstructor
+                                ? $"            {valueCode},"
+                                : $"            {memberName} = {valueCode},"
+                        );
                     }
 
                     if (isReadable)
                     {
                         string valueString;
-                        if (
-                            (isNullable ? underlyingType : memberType).SpecialType
-                            == SpecialType.System_String
-                        )
+                        if (underlyingType.SpecialType == SpecialType.System_String)
                         {
                             if (isNullable)
                             {
-                                valueString =
-                                    $"Set(value.{memberName}?.ToString() ?? string.Empty)";
+                                valueString = $"value.{memberName}?.ToString() ?? string.Empty";
                             }
                             else
                             {
-                                valueString = $"Set(value.{memberName})";
+                                valueString = $"value.{memberName}";
                             }
                         }
                         else
@@ -258,19 +298,26 @@ public static class Utils
                             {
                                 // For now, always use Set with ToString for nullable types to avoid Format constraints
                                 valueString = string.IsNullOrWhiteSpace(format)
-                                    ? $"Set(value.{memberName}?.ToString() ?? string.Empty)"
-                                    : $"Set(value.{memberName}?.ToString(\"{format}\") ?? string.Empty)";
+                                    ? $"value.{memberName}?.ToString() ?? string.Empty"
+                                    : $"value.{memberName}?.ToString(\"{format}\") ?? string.Empty";
                             }
                             else
                             {
+                                var spanFormattableDefine =
+                                    underlyingType.AllInterfaces.FirstOrDefault(i =>
+                                        SymbolEqualityComparer.Default.Equals(
+                                            i.OriginalDefinition,
+                                            spanFormattableInterface
+                                        )
+                                    );
                                 valueString = string.IsNullOrWhiteSpace(format)
-                                    ? $"Format(value.{memberName})"
-                                    : $"Set(value.{memberName}.ToString(\"{format}\"))";
+                                    ? $"value.{memberName}.ToString()"
+                                    : $"value.{memberName}.ToString(\"{format}\")";
                             }
                         }
 
                         propertyWriteCodeBuilder.AppendLine(
-                            $"        writeRow[{writeColKey}].{valueString};"
+                            $"        writeRow[{writeColKey}].Set(Dameng.SepEx.Parser.EscapeSepField({valueString},writer.Spec.Sep.Separator));"
                         );
                     }
                 }

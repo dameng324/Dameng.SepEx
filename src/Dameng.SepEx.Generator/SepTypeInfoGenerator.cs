@@ -90,18 +90,18 @@ public class SepTypeInfoGenerator : ISourceGenerator
 
                             targetTypeNames.Add(targetType);
 
-                            var (readCode, writeCode) =Utils.GeneratePropertyCode(targetType, spanParsableInterface, context);
+                            var (readCode, writeCode) =Utils.GeneratePropertyCode(targetType, context);
 
                             genClassCodeBuilder.AppendLine(
                                 $$"""
                                   file sealed class {{targetType.Name}}SepTypeInfo : ISepTypeInfo<{{targetType.ToDisplayString()}}>
                                   {
-                                      public {{targetType.ToDisplayString()}} Read(nietras.SeparatedValues.SepReader.Row readRow) 
+                                      public {{targetType.ToDisplayString()}} Read(nietras.SeparatedValues.SepReader reader,nietras.SeparatedValues.SepReader.Row readRow) 
                                       {
                                   {{readCode}}
                                       }
 
-                                      public void Write(nietras.SeparatedValues.SepWriter.Row writeRow, {{targetType.ToDisplayString()}} value)
+                                      public void Write(nietras.SeparatedValues.SepWriter writer,nietras.SeparatedValues.SepWriter.Row writeRow, {{targetType.ToDisplayString()}} value)
                                       {
                                   {{writeCode}}
                                       }

@@ -14,34 +14,6 @@ public class SepParsableGenerator : ISourceGenerator
 
     public void Execute(GeneratorExecutionContext context)
     {
-        // #if DEBUG
-        //         if(!Debugger.IsAttached)
-        //         {
-        //             Debugger.Launch();
-        //         }
-        // #endif
-        var spanParsableInterface = context.Compilation.GetTypeByMetadataName(
-            "System.ISpanParsable`1"
-        );
-        if (spanParsableInterface is null)
-        {
-            context.ReportDiagnostic(
-                Diagnostic.Create(
-                    new DiagnosticDescriptor(
-                        "SP001",
-                        "Missing ISpanParsable",
-                        "The ISpanParsable interface is not available. Ensure you are targeting .NET 6 or later.",
-                        "Usage",
-                        DiagnosticSeverity.Error,
-                        true
-                    ),
-                    Location.None
-                )
-            );
-
-            return;
-        }
-
         foreach (var syntaxTree in context.Compilation.SyntaxTrees)
         {
             var semanticModel = context.Compilation.GetSemanticModel(syntaxTree);
@@ -82,7 +54,6 @@ public class SepParsableGenerator : ISourceGenerator
 
                     var (initCode, writeCode) = Utils.GeneratePropertyCode(
                         targetType,
-                        spanParsableInterface,
                         context
                     );
 
@@ -93,12 +64,12 @@ public class SepParsableGenerator : ISourceGenerator
                         $$"""
                           {{accessibility}} partial class {{targetType.Name}} : ISepParsable<{{targetType.ToDisplayString()}}>
                           {
-                              public static {{targetType.ToDisplayString()}} Read(nietras.SeparatedValues.SepReader.Row readRow) 
+                              public static {{targetType.ToDisplayString()}} Read(nietras.SeparatedValues.SepReader reader, nietras.SeparatedValues.SepReader.Row readRow) 
                               {
                           {{initCode}}
                               }
 
-                              public static void Write(nietras.SeparatedValues.SepWriter.Row writeRow, {{targetType.ToDisplayString()}} value)
+                              public static void Write(nietras.SeparatedValues.SepWriter writer,nietras.SeparatedValues.SepWriter.Row writeRow, {{targetType.ToDisplayString()}} value)
                               {
                           {{writeCode.TrimEnd()}}
                               }

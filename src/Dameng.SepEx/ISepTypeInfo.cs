@@ -1,3 +1,5 @@
+using nietras.SeparatedValues;
+
 namespace Dameng.SepEx;
 
 /// <summary>
@@ -8,6 +10,6 @@ namespace Dameng.SepEx;
 /// <typeparam name="T"></typeparam>
 public interface ISepTypeInfo<T>
 {
-    public T Read(nietras.SeparatedValues.SepReader.Row readRow);
-    public void Write(nietras.SeparatedValues.SepWriter.Row writeRow, T value);
+    public T Read(SepReader reader,SepReader.Row readRow);
+    public void Write(SepWriter writer,SepWriter.Row writeRow, T value);
 }

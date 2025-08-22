@@ -8,7 +8,7 @@ public static class SepReaderExtension
     {
         foreach (var row in reader)
         {
-            yield return typeInfo.Read(row);
+            yield return typeInfo.Read(reader, row);
         }
     }
 
@@ -21,7 +21,7 @@ public static class SepReaderExtension
         foreach (var value in values)
         {
             using var row = writer.NewRow();
-            typeInfo.Write(row, value);
+            typeInfo.Write(writer, row, value);
         }
     }
 
@@ -30,7 +30,7 @@ public static class SepReaderExtension
     {
         foreach (var row in reader)
         {
-            yield return T.Read(row);
+            yield return T.Read(reader, row);
         }
     }
 
@@ -40,7 +40,7 @@ public static class SepReaderExtension
         foreach (var value in values)
         {
             using var row = writer.NewRow();
-            T.Write(row, value);
+            T.Write(writer, row, value);
         }
     }
 }
