@@ -28,7 +28,8 @@ public class WriteTests
                 String = $"B,b",
                 Boolean = true,
                 PlatformID = PlatformID.Win32NT,
-                Int = 42
+                Int = 42,
+                CustomProperty = new  CustomClass(){InternalString = "CustomValue"}
             },
             new Level1.Level2.Class
             {
@@ -39,6 +40,7 @@ public class WriteTests
                 Boolean = false,
                 PlatformID = PlatformID.Unix,
                 Int = 100,
+                CustomProperty = new  CustomClass(){InternalString = "CustomValue2"}
             }
         };
 
@@ -51,10 +53,10 @@ public class WriteTests
         var result = writer.ToString();
         Console.Write(result);
         var expected = """
-            String,Int,Double,OptionalDouble,Bool,OptionalBoolean,PlatformID,OptionalPlatformID
-            "B,b",42,0.000000,,True,,Win32NT,
+            String,Int,Double,OptionalDouble,Bool,OptionalBoolean,PlatformID,OptionalPlatformID,CustomProperty
+            "B,b",42,0.000000,,True,,Win32NT,,CustomValue
             "Al
-            ice",100,0.000000,,False,,Unix,Unix
+            ice",100,0.000000,,False,,Unix,Unix,CustomValue2
 
             """;
         result.Should().Be(expected);

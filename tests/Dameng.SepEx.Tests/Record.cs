@@ -1,4 +1,52 @@
-﻿namespace Dameng.SepEx.Tests;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Dameng.SepEx.Tests;
+
+public class CustomClass : ISpanParsable<CustomClass>
+{
+    public override string ToString()
+    {
+        return InternalString;
+    }
+
+    public required string InternalString { get; set; }
+
+    public static CustomClass Parse(string s, IFormatProvider? provider)
+    {
+        return new CustomClass()
+        {
+            InternalString = s
+        };
+    }
+
+    public static bool TryParse([NotNullWhen(true)] string? s, IFormatProvider? provider,
+        [MaybeNullWhen(false)] out CustomClass result)
+    {
+        result = new CustomClass()
+        {
+            InternalString = s ?? string.Empty
+        };
+        return true;
+    }
+
+    public static CustomClass Parse(ReadOnlySpan<char> s, IFormatProvider? provider)
+    {
+        return new CustomClass()
+        {
+            InternalString = s.ToString()
+        };
+    }
+
+    public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider? provider,
+        [MaybeNullWhen(false)] out CustomClass result)
+    {
+        result = new CustomClass()
+        {
+            InternalString = s.ToString()
+        };
+        return true;
+    }
+}
 
 public partial class Level1
 {
@@ -21,6 +69,8 @@ public partial class Level1
             public bool? OptionalBoolean { get; set; }
             public PlatformID PlatformID { get; set; }
             public PlatformID? OptionalPlatformID { get; set; }
+            
+            public required CustomClass CustomProperty { get; set; }
 
             public static Class Create()
             {
