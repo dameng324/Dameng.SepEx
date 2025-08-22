@@ -12,6 +12,37 @@ public class SepParsableGenerator : ISourceGenerator
     {
     }
 
+    private static string GetPartialTypeDeclaration(INamedTypeSymbol typeSymbol)
+    {
+        var typeName = typeSymbol.Name;
+        
+        // Check if it's a record
+        if (typeSymbol.IsRecord)
+        {
+            // Check if it's a record struct
+            if (typeSymbol.IsValueType)
+            {
+                return $"partial record struct {typeName}";
+            }
+            else
+            {
+                return $"partial record {typeName}";
+            }
+        }
+        // Check if it's a struct (but not a record struct)
+        else if (typeSymbol.IsValueType)
+        {
+            // Check if it's readonly struct by looking at the declaration
+            // Note: We can't easily detect readonly from INamedTypeSymbol, but we'll generate regular partial struct
+            return $"partial struct {typeName}";
+        }
+        // Default to class
+        else
+        {
+            return $"partial class {typeName}";
+        }
+    }
+
     public void Execute(GeneratorExecutionContext context)
     {
         foreach (var syntaxTree in context.Compilation.SyntaxTrees)
@@ -19,7 +50,7 @@ public class SepParsableGenerator : ISourceGenerator
             var semanticModel = context.Compilation.GetSemanticModel(syntaxTree);
             foreach (var typeDeclaration in syntaxTree.GetRoot().DescendantNodesAndSelf())
             {
-                if (typeDeclaration is not ClassDeclarationSyntax and not StructDeclarationSyntax)
+                if (typeDeclaration is not ClassDeclarationSyntax and not StructDeclarationSyntax and not RecordDeclarationSyntax)
                     continue;
                 var targetType =
                     semanticModel.GetDeclaredSymbol(typeDeclaration) as INamedTypeSymbol;
@@ -56,16 +87,15 @@ public class SepParsableGenerator : ISourceGenerator
                         targetType,
                         context
                     );
-
-                    var accessibility =
-                        targetType.DeclaredAccessibility is Accessibility.Public ? "public" : "internal";
+                    
+                    var partialTypeDeclaration = GetPartialTypeDeclaration(targetType);
 
                     if (targetType.ContainingType is null)
                     {
                         // Top-level class - use original logic
                         genClassCodeBuilder.Append(
                             $$"""
-                              {{accessibility}} partial class {{targetType.Name}} : ISepParsable<{{targetType.ToDisplayString()}}>
+                              {{partialTypeDeclaration}} : ISepParsable<{{targetType.ToDisplayString()}}>
                               {
                                   public static {{targetType.ToDisplayString()}} Read(nietras.SeparatedValues.SepReader reader, nietras.SeparatedValues.SepReader.Row readRow) 
                                   {
@@ -83,7 +113,7 @@ public class SepParsableGenerator : ISourceGenerator
                     else
                     {
                         // Nested class - build proper containment structure
-                        genClassCodeBuilder.Append(GenerateNestedClassStructure(targetType, accessibility, initCode, writeCode));
+                        genClassCodeBuilder.Append(GenerateNestedClassStructure(targetType,  initCode, writeCode));
                     }
 
                     // Just change the filename for now as a test
@@ -100,7 +130,7 @@ public class SepParsableGenerator : ISourceGenerator
         }
     }
 
-    private static string GenerateNestedClassStructure(INamedTypeSymbol targetType, string accessibility, string initCode, string writeCode)
+    private static string GenerateNestedClassStructure(INamedTypeSymbol targetType,  string initCode, string writeCode)
     {
         // Build the list of containing classes from outermost to innermost
         var containers = new List<INamedTypeSymbol>();
@@ -115,8 +145,9 @@ public class SepParsableGenerator : ISourceGenerator
         containers.Reverse();
         
         // Build the nested structure
+        var nestedTypeDeclaration = GetPartialTypeDeclaration(targetType);
         var targetClassDef = $$"""
-            {{accessibility}} partial class {{targetType.Name}} : ISepParsable<{{targetType.ToDisplayString()}}>
+            {{nestedTypeDeclaration}} : ISepParsable<{{targetType.ToDisplayString()}}>
             {
                 public static {{targetType.ToDisplayString()}} Read(nietras.SeparatedValues.SepReader reader, nietras.SeparatedValues.SepReader.Row readRow) 
                 {

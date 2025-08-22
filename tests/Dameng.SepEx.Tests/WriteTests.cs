@@ -9,28 +9,28 @@ public class WriteTests
     [Test]
     public void SepParsableWrite_ShouldWorkCorrect()
     {
-        RunWriteTest((writer, records) => writer.WriteRecords<Level1.Level2.Record>(records));
+        RunWriteTest((writer, records) => writer.WriteRecords<Level1.Level2.Class>(records));
     }
 
     [Test]
     public void SepTypeInfoWrite_ShouldWorkCorrect()
     {
-        RunWriteTest((writer, records) => writer.WriteRecords<Level1.Level2.Record>(records, TestSepTypeInfo.Record));
+        RunWriteTest((writer, records) => writer.WriteRecords<Level1.Level2.Class>(records, TestSepTypeInfo.Class));
     }
 
-    void RunWriteTest(Action<SepWriter, IEnumerable<Level1.Level2.Record>> WriteFaction)
+    void RunWriteTest(Action<SepWriter, IEnumerable<Level1.Level2.Class>> WriteFaction)
     {
         // Arrange
-        var records = new List<Level1.Level2.Record>
+        var records = new List<Level1.Level2.Class>
         {
-            new Level1.Level2.Record
+            new Level1.Level2.Class
             {
                 String = $"B,b",
                 Boolean = true,
                 PlatformID = PlatformID.Win32NT,
                 Int = 42
             },
-            new Level1.Level2.Record
+            new Level1.Level2.Class
             {
                 Ignore = 0,
                 OptionalBoolean = null,

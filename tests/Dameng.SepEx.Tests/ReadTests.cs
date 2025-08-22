@@ -9,14 +9,14 @@ public class ReadTests
     [Test]
     public void SepParsableRead_ShouldWorkCorrect()
     {
-        RunReadTest(reader=> reader.GetRecords<Level1.Level2.Record>());
+        RunReadTest(reader=> reader.GetRecords<Level1.Level2.Class>());
     }
     [Test]
     public void SepTypeInfoRead_ShouldWorkCorrect()
     {
-        RunReadTest(reader=> reader.GetRecords<Level1.Level2.Record>(TestSepTypeInfo.Record));
+        RunReadTest(reader=> reader.GetRecords<Level1.Level2.Class>(TestSepTypeInfo.Class));
     }
-    void RunReadTest(Func<SepReader, IEnumerable<Level1.Level2.Record>> readFaction)
+    void RunReadTest(Func<SepReader, IEnumerable<Level1.Level2.Class>> readFaction)
     {
         // Arrange
         var text = $""""
