@@ -361,7 +361,22 @@ public class SepTypeInfoGenerator : ISourceGenerator
 
                 var attributes = classSymbol.GetAttributes();
                 
-                // Handle GenSepTypeInfo attributes
+                // Handle GenSepParsable attribute FIRST and independently
+                var genParsableAttribute = attributes
+                    .FirstOrDefault(attribute =>
+                        attribute
+                            .AttributeClass!.ToDisplayString()
+                            .Equals("Dameng.SepEx.GenSepParsableAttribute")
+                    );
+                    
+                if (genParsableAttribute is not null)
+                {
+                    // Process GenSepParsable and skip the rest for this class
+                    ProcessGenSepParsable(classSymbol, spanParsableInterface, context);
+                    continue; // Skip to next class
+                }
+                
+                // Handle GenSepTypeInfo attributes (existing logic)
                 var typeInfoAttributes = attributes
                     .Where(attribute =>
                         attribute
@@ -369,17 +384,9 @@ public class SepTypeInfoGenerator : ISourceGenerator
                             .StartsWith("Dameng.SepEx.GenSepTypeInfoAttribute<")
                     )
                     .ToArray();
-                    
-                // Handle GenSepParsable attribute
-                var genParsableAttribute = attributes
-                    .FirstOrDefault(attribute =>
-                        attribute
-                            .AttributeClass!.ToDisplayString()
-                            .Equals("Dameng.SepEx.GenSepParsableAttribute")
-                    );
                 
                 // Skip if no relevant attributes found
-                if (typeInfoAttributes.Length <= 0 && genParsableAttribute is null)
+                if (typeInfoAttributes.Length <= 0)
                 {
                     continue;
                 }
@@ -754,26 +761,6 @@ public class SepTypeInfoGenerator : ISourceGenerator
                         );
                     }
 
-                    // Generate ISepParsable implementation if GenSepParsable attribute is present
-                    if (genParsableAttribute is not null)
-                    {
-                        context.ReportDiagnostic(
-                            Diagnostic.Create(
-                                new DiagnosticDescriptor(
-                                    "SP201",
-                                    "About to call ProcessGenSepParsable",
-                                    $"About to call ProcessGenSepParsable for class '{classSymbol.Name}'",
-                                    "Debug",
-                                    DiagnosticSeverity.Info,
-                                    true
-                                ),
-                                Location.None
-                            )
-                        );
-                        ProcessGenSepParsable(classSymbol, spanParsableInterface, context);
-                        return; // Don't process the rest if we're generating ISepParsable
-                    }
-
                     var accessibility =
                         classSymbol.DeclaredAccessibility is Accessibility.Public
                             ? "public"
@@ -829,20 +816,6 @@ public class SepTypeInfoGenerator : ISourceGenerator
         INamedTypeSymbol spanParsableInterface,
         GeneratorExecutionContext context)
     {
-        // Debug diagnostic to verify this method is called
-        context.ReportDiagnostic(
-            Diagnostic.Create(
-                new DiagnosticDescriptor(
-                    "SP200",
-                    "ProcessGenSepParsable Called",
-                    $"ProcessGenSepParsable called for class '{classSymbol.Name}'",
-                    "Debug",
-                    DiagnosticSeverity.Info,
-                    true
-                ),
-                Location.None
-            )
-        );
         StringBuilder genClassCodeBuilder = new StringBuilder();
         genClassCodeBuilder.AppendLine(
             $$"""
