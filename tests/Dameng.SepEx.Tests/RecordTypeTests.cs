@@ -1,7 +1,6 @@
-﻿using Dameng.SepEx;
-using nietras.SeparatedValues;
+﻿using nietras.SeparatedValues;
 
-namespace Dameng.Sep.Gen.Tests;
+namespace Dameng.SepEx.Tests;
 
 public class RecordTypeTests
 {
@@ -16,7 +15,7 @@ public class RecordTypeTests
 
         // Act
         using var reader = nietras.SeparatedValues.Sep.Reader().FromText(text);
-        var records = reader.GetRecords<Record>(TestSepTypeInfo.Record).ToList();
+        var records = reader.GetRecords<Record>(SepEx.Tests.TestSepTypeInfo.Record).ToList();
 
         // Assert
         await Assert.That(records).HasCount().EqualTo(1);
@@ -35,7 +34,7 @@ public class RecordTypeTests
 
         // Act
         using var reader = nietras.SeparatedValues.Sep.Reader().FromText(text);
-        var records = reader.GetRecords<Record2>(TestSepTypeInfo.Record2).ToList();
+        var records = reader.GetRecords<Record2>(SepEx.Tests.TestSepTypeInfo.Record2).ToList();
 
         // Assert
         await Assert.That(records).HasCount().EqualTo(1);
@@ -55,7 +54,7 @@ public class RecordTypeTests
 
         // Act
         using var reader = nietras.SeparatedValues.Sep.Reader().FromText(text);
-        var records = reader.GetRecords<Record3>(TestSepTypeInfo.Record3).ToList();
+        var records = reader.GetRecords<Record3>(SepEx.Tests.TestSepTypeInfo.Record3).ToList();
 
         // Assert
         await Assert.That(records).HasCount().EqualTo(1);
@@ -75,7 +74,7 @@ public class RecordTypeTests
 
         // Act
         using var reader = nietras.SeparatedValues.Sep.Reader().FromText(text);
-        var records = reader.GetRecords<Record4>(TestSepTypeInfo.Record4).ToList();
+        var records = reader.GetRecords<Record4>(SepEx.Tests.TestSepTypeInfo.Record4).ToList();
 
         // Assert
         await Assert.That(records).HasCount().EqualTo(1);
@@ -95,7 +94,7 @@ public class RecordTypeTests
 
         // Act
         using var reader = nietras.SeparatedValues.Sep.Reader().FromText(text);
-        var records = reader.GetRecords<Record5>(TestSepTypeInfo.Record5).ToList();
+        var records = reader.GetRecords<Record5>(SepEx.Tests.TestSepTypeInfo.Record5).ToList();
 
         // Assert
         await Assert.That(records).HasCount().EqualTo(1);
@@ -115,7 +114,7 @@ public class RecordTypeTests
 
         // Act
         using var reader = nietras.SeparatedValues.Sep.Reader().FromText(text);
-        var records = reader.GetRecords<Record6>(TestSepTypeInfo.Record6).ToList();
+        var records = reader.GetRecords<Record6>(SepEx.Tests.TestSepTypeInfo.Record6).ToList();
 
         // Assert
         await Assert.That(records).HasCount().EqualTo(1);

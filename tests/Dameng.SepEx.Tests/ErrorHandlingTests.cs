@@ -1,7 +1,6 @@
-﻿using Dameng.SepEx;
-using nietras.SeparatedValues;
+﻿using nietras.SeparatedValues;
 
-namespace Dameng.Sep.Gen.Tests;
+namespace Dameng.SepEx.Tests;
 
 public class ErrorHandlingTests
 {
@@ -16,7 +15,7 @@ public class ErrorHandlingTests
 
         // Act
         using var reader = nietras.SeparatedValues.Sep.Reader().FromText(text);
-        var records = reader.GetRecords<Record>(TestSepTypeInfo.Record).ToList();
+        var records = reader.GetRecords<Record>(SepEx.Tests.TestSepTypeInfo.Record).ToList();
 
         // Assert
         await Assert.That(records).HasCount().EqualTo(1);
@@ -40,7 +39,7 @@ public class ErrorHandlingTests
 
         // Act
         using var reader = nietras.SeparatedValues.Sep.Reader().FromText(text);
-        var records = reader.GetRecords<Record>(TestSepTypeInfo.Record).ToList();
+        var records = reader.GetRecords<Record>(SepEx.Tests.TestSepTypeInfo.Record).ToList();
 
         // Assert
         await Assert.That(records).HasCount().EqualTo(0);
@@ -60,7 +59,7 @@ public class ErrorHandlingTests
 
         // Act
         using var reader = nietras.SeparatedValues.Sep.Reader().FromText(text);
-        var records = reader.GetRecords<Record>(TestSepTypeInfo.Record).ToList();
+        var records = reader.GetRecords<Record>(SepEx.Tests.TestSepTypeInfo.Record).ToList();
 
         // Assert
         await Assert.That(records).HasCount().EqualTo(1);
