@@ -24,7 +24,8 @@ Install the NuGet packages:
 1. Define your data model with attributes:
 
 ```csharp
-public class Person
+[GenSepParsable]
+public partial class Person
 {
     [SepColumnIndex(0)]
     public string Name { get; set; }
@@ -40,14 +41,32 @@ public class Person
 }
 ```
 
-2. Generate type info using attributes:
+2. Read and write CSV data:
+
+```csharp
+// Reading
+using var reader = Sep.Reader().FromFile("people.csv");
+foreach (var person in reader.GetRecords<Person>())
+{
+    Console.WriteLine($"{person.Name} is {person.Age} years old");
+}
+
+// Writing
+var people = new List<Person> { /* ... */ };
+using var writer = Sep.Writer().ToFile("output.csv");
+writer.WriteRecord(people);
+```
+
+## External Data Model
+
+1. Generate type info using attributes:
 
 ```csharp
 [GenSepTypeInfo<Person>()]
 public partial class PersonTypeInfo;
 ```
 
-3. Read and write CSV data:
+2. Read and write CSV data:
 
 ```csharp
 // Reading
@@ -69,7 +88,7 @@ writer.WriteRecord(people, PersonTypeInfo.Person);
 - `[SepColumnName(string name)]`: Specify column name
 - `[SepColumnIndex(int index)]`: Specify column index for reading/writing order
 - `[SepDefaultValue(object value)]`: Set default value when column is missing
-- `[SepIgnore]`: Ignore property/field during CSV operations
+- `[SepColumnIgnore]`: Ignore property/field during CSV operations
 - `[SepColumnFormat(string format)]`: Specify format for writing values
 
 ## License

@@ -14,7 +14,7 @@ public partial class Record
     public double Double { get; set; }
     [SepColumnFormat("0.000000")]
     public double? OptionalDouble { get; set; }
-    [SepIgnore]
+    [SepColumnIgnore]
     public float Ignore { get; set; }
     [SepColumnName("Bool")]
     public bool Boolean { get; set; }

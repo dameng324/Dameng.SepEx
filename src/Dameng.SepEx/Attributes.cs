@@ -36,7 +36,7 @@ public class SepDefaultValueAttribute(object? value) : Attribute;
 /// set ignore column.
 /// </summary>
 [AttributeUsage(AttributeTargets.Property|AttributeTargets.Field)]
-public class SepIgnoreAttribute : Attribute;
+public class SepColumnIgnoreAttribute : Attribute;
 
 /// <summary>
 /// set format for column.
