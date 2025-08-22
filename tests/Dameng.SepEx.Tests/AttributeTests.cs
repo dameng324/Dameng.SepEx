@@ -1,8 +1,7 @@
 ﻿using System.Text;
-using Dameng.SepEx;
 using nietras.SeparatedValues;
 
-namespace Dameng.Sep.Gen.Tests;
+namespace Dameng.SepEx.Tests;
 
 public class AttributeTests
 {
@@ -17,7 +16,7 @@ public class AttributeTests
 
         // Act
         using var reader = nietras.SeparatedValues.Sep.Reader().FromText(text);
-        var records = reader.GetRecords<Record>(TestSepTypeInfo.Record).ToList();
+        var records = reader.GetRecords<Record>(SepEx.Tests.TestSepTypeInfo.Record).ToList();
 
         // Assert
         await Assert.That(records).HasCount().EqualTo(1);
@@ -43,7 +42,7 @@ public class AttributeTests
 
         // Act
         using var reader = nietras.SeparatedValues.Sep.Reader().FromText(text);
-        var records = reader.GetRecords<Record>(TestSepTypeInfo.Record).ToList();
+        var records = reader.GetRecords<Record>(SepEx.Tests.TestSepTypeInfo.Record).ToList();
 
         // Assert
         await Assert.That(records).HasCount().EqualTo(1);
@@ -67,7 +66,7 @@ public class AttributeTests
         // Act
         var stringBuilder = new StringBuilder();
         using var writer = nietras.SeparatedValues.Sep.Writer().To(stringBuilder);
-        writer.WriteRecords(records, TestSepTypeInfo.Record);
+        writer.WriteRecords(records, SepEx.Tests.TestSepTypeInfo.Record);
         var result = stringBuilder.ToString();
 
         // Assert
@@ -90,7 +89,7 @@ public class AttributeTests
         // Act
         var stringBuilder = new StringBuilder();
         using var writer = nietras.SeparatedValues.Sep.Writer().To(stringBuilder);
-        writer.WriteRecords(records, TestSepTypeInfo.Record);
+        writer.WriteRecords(records, SepEx.Tests.TestSepTypeInfo.Record);
         var result = stringBuilder.ToString();
 
         // Assert

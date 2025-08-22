@@ -1,10 +1,9 @@
 ﻿using System.Globalization;
 using System.Text;
 using CsvHelper;
-using Dameng.SepEx;
 using nietras.SeparatedValues;
 
-namespace Dameng.Sep.Gen.Tests;
+namespace Dameng.SepEx.Tests;
 
 public class BasicCsvOperationsTests
 {
@@ -20,7 +19,7 @@ public class BasicCsvOperationsTests
 
         // Act
         using var reader = nietras.SeparatedValues.Sep.Reader().FromText(text);
-        var records = reader.GetRecords<Record>(TestSepTypeInfo.Record).ToList();
+        var records = reader.GetRecords<Record>(SepEx.Tests.TestSepTypeInfo.Record).ToList();
 
         // Assert
         await Assert.That(records).HasCount().EqualTo(2);
@@ -65,7 +64,7 @@ public class BasicCsvOperationsTests
 
         // Act
         using var writer = nietras.SeparatedValues.Sep.Writer().To(stringBuilder);
-        writer.WriteRecords(records, TestSepTypeInfo.Record);
+        writer.WriteRecords(records, SepEx.Tests.TestSepTypeInfo.Record);
         var result = stringBuilder.ToString();
 
         // Assert
@@ -94,12 +93,12 @@ public class BasicCsvOperationsTests
         var stringBuilder = new StringBuilder();
         using (var writer = nietras.SeparatedValues.Sep.Writer().To(stringBuilder))
         {
-            writer.WriteRecords(originalRecords, TestSepTypeInfo.Record);
+            writer.WriteRecords(originalRecords, SepEx.Tests.TestSepTypeInfo.Record);
         }
         
         // Act - Read back from CSV
         using var reader = nietras.SeparatedValues.Sep.Reader().FromText(stringBuilder.ToString());
-        var readRecords = reader.GetRecords<Record>(TestSepTypeInfo.Record).ToList();
+        var readRecords = reader.GetRecords<Record>(SepEx.Tests.TestSepTypeInfo.Record).ToList();
 
         // Assert
         await Assert.That(readRecords).HasCount().EqualTo(originalRecords.Count);

@@ -1,10 +1,9 @@
 ﻿using System.Text;
-using Dameng.SepEx;
 using nietras.SeparatedValues;
 
-namespace Dameng.Sep.Gen.Tests;
+namespace Dameng.SepEx.Tests;
 
-public class IntegrationTests
+public class SepTypeInfoIntegrationTests
 {
     [Test]
     public async Task LargeDataset_ShouldProcessEfficiently()
@@ -27,12 +26,12 @@ public class IntegrationTests
         var stringBuilder = new StringBuilder();
         using (var writer = nietras.SeparatedValues.Sep.Writer().To(stringBuilder))
         {
-            writer.WriteRecords(records, TestSepTypeInfo.Record);
+            writer.WriteRecords(records, SepEx.Tests.TestSepTypeInfo.Record);
         }
 
         // Act - Read back large dataset
         using var reader = nietras.SeparatedValues.Sep.Reader().FromText(stringBuilder.ToString());
-        var readRecords = reader.GetRecords<Record>(TestSepTypeInfo.Record).ToList();
+        var readRecords = reader.GetRecords<Record>(SepEx.Tests.TestSepTypeInfo.Record).ToList();
 
         // Assert
         await Assert.That(readRecords).HasCount().EqualTo(1000);
@@ -56,11 +55,11 @@ public class IntegrationTests
         var stringBuilder = new StringBuilder();
         using (var writer = nietras.SeparatedValues.Sep.Writer().To(stringBuilder))
         {
-            writer.WriteRecords(records, TestSepTypeInfo.Record);
+            writer.WriteRecords(records, SepEx.Tests.TestSepTypeInfo.Record);
         }
 
         using var reader = nietras.SeparatedValues.Sep.Reader().FromText(stringBuilder.ToString());
-        var readRecords = reader.GetRecords<Record>(TestSepTypeInfo.Record).ToList();
+        var readRecords = reader.GetRecords<Record>(SepEx.Tests.TestSepTypeInfo.Record).ToList();
 
         // Assert
         await Assert.That(readRecords).HasCount().EqualTo(3);
@@ -83,11 +82,11 @@ public class IntegrationTests
         var stringBuilder = new StringBuilder();
         using (var writer = nietras.SeparatedValues.Sep.Writer().To(stringBuilder))
         {
-            writer.WriteRecords(records, TestSepTypeInfo.Record);
+            writer.WriteRecords(records, SepEx.Tests.TestSepTypeInfo.Record);
         }
 
         using var reader = nietras.SeparatedValues.Sep.Reader().FromText(stringBuilder.ToString());
-        var readRecords = reader.GetRecords<Record>(TestSepTypeInfo.Record).ToList();
+        var readRecords = reader.GetRecords<Record>(SepEx.Tests.TestSepTypeInfo.Record).ToList();
 
         // Assert
         await Assert.That(readRecords).HasCount().EqualTo(2);

@@ -1,8 +1,7 @@
 ﻿using System.Text;
-using Dameng.SepEx;
 using nietras.SeparatedValues;
 
-namespace Dameng.Sep.Gen.Tests;
+namespace Dameng.SepEx.Tests;
 
 public class NullableTypeTests
 {
@@ -19,7 +18,7 @@ public class NullableTypeTests
 
         // Act
         using var reader = nietras.SeparatedValues.Sep.Reader().FromText(text);
-        var records = reader.GetRecords<SimpleNullableRecord>(TestSepTypeInfo.SimpleNullableRecord).ToList();
+        var records = reader.GetRecords<SimpleNullableRecord>(SepEx.Tests.TestSepTypeInfo.SimpleNullableRecord).ToList();
 
         // Assert
         await Assert.That(records).HasCount().EqualTo(3);
@@ -44,12 +43,12 @@ public class NullableTypeTests
         var stringBuilder = new StringBuilder();
         using (var writer = nietras.SeparatedValues.Sep.Writer().To(stringBuilder))
         {
-            writer.WriteRecords(originalRecords, TestSepTypeInfo.SimpleNullableRecord);
+            writer.WriteRecords(originalRecords, SepEx.Tests.TestSepTypeInfo.SimpleNullableRecord);
         }
 
         // Act - Read back
         using var reader = nietras.SeparatedValues.Sep.Reader().FromText(stringBuilder.ToString());
-        var readRecords = reader.GetRecords<SimpleNullableRecord>(TestSepTypeInfo.SimpleNullableRecord).ToList();
+        var readRecords = reader.GetRecords<SimpleNullableRecord>(SepEx.Tests.TestSepTypeInfo.SimpleNullableRecord).ToList();
 
         // Assert
         await Assert.That(readRecords).HasCount().EqualTo(3);

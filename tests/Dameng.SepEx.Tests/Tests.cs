@@ -1,10 +1,7 @@
-﻿using System.Text.Json.Serialization;
-using Dameng.SepEx;
-using TUnit.Assertions;
+﻿namespace Dameng.SepEx.Tests;
 
-namespace Dameng.Sep.Gen.Tests;
-
-public class Record
+[GenSepParsable]
+public partial class Record
 {
     [SepColumnIndex(0)]
     [CsvHelper.Configuration.Attributes.Index(0)]
