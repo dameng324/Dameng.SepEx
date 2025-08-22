@@ -29,7 +29,8 @@ public class WriteTests
                 Boolean = true,
                 PlatformID = PlatformID.Win32NT,
                 Int = 42,
-                CustomProperty = new  CustomClass(){InternalString = "CustomValue"}
+                CustomProperty = new  CustomClass(){InternalString = "CustomValue"},
+                DateTime = new DateTime(2020,1,3,4,5,6,7)
             },
             new Level1.Level2.Class
             {
@@ -40,7 +41,8 @@ public class WriteTests
                 Boolean = false,
                 PlatformID = PlatformID.Unix,
                 Int = 100,
-                CustomProperty = new  CustomClass(){InternalString = "CustomValue2"}
+                CustomProperty = new  CustomClass(){InternalString = "CustomValue2"},
+                DateTime = new DateTime(2020,4,5,4,5,6,7)
             }
         };
 
@@ -53,10 +55,10 @@ public class WriteTests
         var result = writer.ToString();
         Console.Write(result);
         var expected = """
-            String,Int,Double,OptionalDouble,Bool,OptionalBoolean,PlatformID,OptionalPlatformID,CustomProperty
-            "B,b",42,0.000000,,True,,Win32NT,,CustomValue
+            String,Int,Double,OptionalDouble,Bool,OptionalBoolean,PlatformID,OptionalPlatformID,DateTime,CustomProperty
+            "B,b",42,0.000000,,True,,Win32NT,,20200103 04:05:06,CustomValue
             "Al
-            ice",100,0.000000,,False,,Unix,Unix,CustomValue2
+            ice",100,0.000000,,False,,Unix,Unix,20200405 04:05:06,CustomValue2
 
             """;
         result.Should().Be(expected);

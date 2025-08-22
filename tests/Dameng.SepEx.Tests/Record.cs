@@ -69,6 +69,7 @@ public partial class Level1
             public bool? OptionalBoolean { get; set; }
             public PlatformID PlatformID { get; set; }
             public PlatformID? OptionalPlatformID { get; set; }
+            [SepColumnFormat("yyyyMMdd HH:mm:ss")] public DateTime? DateTime { get; set; }
             
             public required CustomClass CustomProperty { get; set; }
 

@@ -20,9 +20,9 @@ public class ReadTests
     {
         // Arrange
         var text = $""""
-                   String,Bool,PlatformID,Int,Ignore,OptionalPlatformID,Double,OptionalBoolean
-                   "  B,b""","True","Win32NT",42,50,"Unix","0.001",
-                   "A""l{Environment.NewLine}ice",False,Unix,100,50,,2e4,
+                   String,Bool,PlatformID,Int,Ignore,OptionalPlatformID,Double,OptionalBoolean,DateTime
+                   "  B,b""","True","Win32NT",42,50,"Unix","0.001",,20240101 11:11:11
+                   "A""l{Environment.NewLine}ice",False,Unix,100,50,,2e4,,2024-01-01 11:11:11.333
                    """";
 
         // Act - Read back large dataset
@@ -30,24 +30,29 @@ public class ReadTests
         var readRecords = readFaction(reader).ToList();
 
         // Assert
+        int index = 0;
         (readRecords).Count.Should().Be(2);
-        (readRecords[0].String).Should().Be("  B,b\"");
-        (readRecords[0].Boolean).Should().Be(true);
-        (readRecords[0].PlatformID).Should().Be(PlatformID.Win32NT);
-        (readRecords[0].Int).Should().Be(42);
-        (readRecords[0].Ignore).Should().Be(0);
-        (readRecords[0].OptionalBoolean).Should().Be(null);
-        (readRecords[0].OptionalPlatformID).Should().Be(PlatformID.Unix);
-        (readRecords[0].OptionalDouble).Should().Be(null);
+        (readRecords[index].String).Should().Be("  B,b\"");
+        (readRecords[index].Boolean).Should().Be(true);
+        (readRecords[index].PlatformID).Should().Be(PlatformID.Win32NT);
+        (readRecords[index].Int).Should().Be(42);
+        (readRecords[index].Ignore).Should().Be(0);
+        (readRecords[index].OptionalBoolean).Should().Be(null);
+        (readRecords[index].OptionalPlatformID).Should().Be(PlatformID.Unix);
+        (readRecords[index].OptionalDouble).Should().Be(null);
+        (readRecords[index].DateTime).Should().HaveValue();
+
+        index++;
         
-        (readRecords[1].String).Should().Be($"A\"l{Environment.NewLine}ice");
-        (readRecords[1].Boolean).Should().Be(false);
-        (readRecords[1].PlatformID).Should().Be(PlatformID.Unix);
-        (readRecords[1].Int).Should().Be(100);
-        (readRecords[1].Ignore).Should().Be(0);
-        (readRecords[1].OptionalBoolean).Should().Be(null);
-        (readRecords[1].OptionalPlatformID).Should().Be(null);
-        (readRecords[0].OptionalDouble).Should().Be(null);
+        (readRecords[index].String).Should().Be($"A\"l{Environment.NewLine}ice");
+        (readRecords[index].Boolean).Should().Be(false);
+        (readRecords[index].PlatformID).Should().Be(PlatformID.Unix);
+        (readRecords[index].Int).Should().Be(100);
+        (readRecords[index].Ignore).Should().Be(0);
+        (readRecords[index].OptionalBoolean).Should().Be(null);
+        (readRecords[index].OptionalPlatformID).Should().Be(null);
+        (readRecords[index].OptionalDouble).Should().Be(null);
+        (readRecords[index].DateTime).Should().HaveValue();
     }
 
 }

@@ -231,6 +231,15 @@ public static class Utils
                 )
                 ?.ConstructorArguments.FirstOrDefault()
                 .Value?.ToString();
+            var format = member
+                .GetAttributes()
+                .FirstOrDefault(o =>
+                    o.AttributeClass?.ToDisplayString()
+                        .Equals("Dameng.SepEx.SepColumnFormatAttribute") == true
+                )
+                ?.ConstructorArguments.FirstOrDefault()
+                .Value?.ToString();
+
 
             string readColKey = columnIndex ?? $"\"{columnName}\"";
             string writeColKey = $"\"{columnName}\"";
@@ -240,7 +249,7 @@ public static class Utils
                 var valueCode =
                     underlyingType.SpecialType == SpecialType.System_String
                         ? $"Dameng.SepEx.Parser.UnescapeSepField(readRow[{readColKey}].Span).ToString()"
-                        : $"Dameng.SepEx.Parser.{tryReadMethodName}<{underlyingType.ToDisplayString()}>(reader,readRow,{readColKey},out var v{propertyIndex})?v{propertyIndex}:{defaultValue}";
+                        : $"Dameng.SepEx.Parser.{tryReadMethodName}<{underlyingType.ToDisplayString()}>(reader,readRow,{readColKey},\"{format}\",out var v{propertyIndex})?v{propertyIndex}:{defaultValue}";
 
                 propertyReadCodeBuilder.AppendLine(
                     hasPrimaryConstructor
@@ -265,15 +274,6 @@ public static class Utils
                 }
                 else
                 {
-                    var format = member
-                        .GetAttributes()
-                        .FirstOrDefault(o =>
-                            o.AttributeClass?.ToDisplayString()
-                                .Equals("Dameng.SepEx.SepColumnFormatAttribute") == true
-                        )
-                        ?.ConstructorArguments.FirstOrDefault()
-                        .Value?.ToString();
-
                     if (isNullable)
                     {
                         // For now, always use Set with ToString for nullable types to avoid Format constraints
