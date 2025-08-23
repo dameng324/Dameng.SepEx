@@ -13,54 +13,21 @@ A high-performance, **Native AOT compatible** source generator for working with 
 - **Type Safety**: Compile-time type checking and IntelliSense support
 - **NativeAOT Compatible**: Full support for Native AOT compilation, unlike CSVHelper
 
-## Migration from CSVHelper
+## Installation
 
-Dameng.SepEx is designed as a high-performance, NativeAOT-compatible alternative to CSVHelper. If you're currently using CSVHelper and want to take advantage of Native AOT compilation or better performance, this migration guide will help you transition smoothly.
+Install the NuGet packages:
 
-### Why Migrate?
-
-- **Native AOT Support**: Unlike CSVHelper, Dameng.SepEx fully supports Native AOT compilation
-- **Better Performance**: Built on the fast Sep library for superior performance
-- **Compile-Time Safety**: Source generator provides compile-time type checking
-- **Smaller Runtime Footprint**: No reflection overhead in Native AOT scenarios
-
-### Attribute Migration Guide
-
-| CSVHelper Attribute | Dameng.SepEx Equivalent | Notes |
-|---------------------|-------------------------|-------|
-| `[Name("ColumnName")]` | `[SepColumnName("ColumnName")]` | Direct replacement |
-| `[Index(0)]` | `[SepColumnIndex(0)]` | Direct replacement |
-| `[Ignore]` | `[SepColumnIgnore]` | Direct replacement |
-| `[Default("value")]` | `[SepDefaultValue("value")]` | Direct replacement |
-| `[Format("format")]` | `[SepColumnFormat("format")]` | Direct replacement |
-
-### Code Migration Example
-
-**Before (CSVHelper):**
-```csharp
-public class Person
-{
-    [Name("FullName")]
-    [Index(0)]
-    public string Name { get; set; }
-    
-    [Name("Age")]
-    public int Age { get; set; }
-    
-    [Default("Unknown")]
-    public string City { get; set; }
-    
-    [Ignore]
-    public string InternalId { get; set; }
-}
-
-// Usage
-using var reader = new StringReader(csvContent);
-using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
-var records = csv.GetRecords<Person>().ToList();
+```bash
+dotnet add package Dameng.SepEx
+dotnet add package Dameng.SepEx.Generator
 ```
 
-**After (Dameng.SepEx):**
+## Usage & Migration
+
+### Basic Usage
+
+Define your data model as a partial class with `[GenSepParsable]` and use attributes to configure column mapping:
+
 ```csharp
 [GenSepParsable]
 public partial class Person
@@ -79,24 +46,41 @@ public partial class Person
     public string InternalId { get; set; }
 }
 
-// Usage
-using var reader = Sep.Reader().FromText(csvContent);
-var records = reader.GetRecords<Person>().ToList();
+// Reading CSV
+using var reader = Sep.Reader().FromFile("people.csv");
+foreach (var person in reader.GetRecords<Person>())
+{
+    Console.WriteLine($"{person.Name} is {person.Age} years old");
+}
+
+// Writing CSV
+var people = new List<Person> { /* ... */ };
+using var writer = Sep.Writer().ToFile("output.csv");
+writer.WriteRecords(people);
 ```
 
-### Key Differences
+### Migrating from CSVHelper
 
-1. **Partial Classes**: Your data models must be declared as `partial` and marked with `[GenSepParsable]`
-2. **Source Generation**: Code is generated at compile time instead of runtime reflection
-3. **Sep Library**: Uses the Sep library instead of CSVHelper's internal parsing
-4. **Native AOT Ready**: No reflection means full Native AOT compatibility
+If you're migrating from CSVHelper, simply update your attributes and make classes partial:
+
+| CSVHelper | Dameng.SepEx |
+|-----------|--------------|
+| `[Name("column")]` | `[SepColumnName("column")]` |
+| `[Index(0)]` | `[SepColumnIndex(0)]` |
+| `[Ignore]` | `[SepColumnIgnore]` |
+| `[Default("value")]` | `[SepDefaultValue("value")]` |
+| `[Format("format")]` | `[SepColumnFormat("format")]` |
+
+**Key changes:**
+- Add `[GenSepParsable]` attribute and make class `partial`
+- Replace CSVHelper attributes with Dameng.SepEx equivalents
+- Use `Sep.Reader()` and `Sep.Writer()` instead of CSVHelper APIs
 
 ### External Data Models
 
-If you can't modify existing classes (e.g., from external libraries), use the type info approach:
+For classes you can't modify (e.g., from external libraries), use type info generation:
 
 ```csharp
-// For external classes you can't modify
 [GenSepTypeInfo<ExternalPerson>()]
 public partial class ExternalPersonTypeInfo;
 
@@ -106,78 +90,6 @@ foreach (var person in reader.GetRecords<ExternalPerson>(ExternalPersonTypeInfo.
 {
     // Process person
 }
-```
-
-## Installation
-
-Install the NuGet packages:
-
-```bash
-dotnet add package Dameng.SepEx
-dotnet add package Dameng.SepEx.Generator
-```
-
-## Quick Start
-
-1. Define your data model with attributes:
-
-```csharp
-[GenSepParsable]
-public partial class Person
-{
-    [SepColumnIndex(0)]
-    public string Name { get; set; }
-    
-    [SepColumnName("Age")]
-    public int Age { get; set; }
-    
-    [SepDefaultValue("Unknown")]
-    public string City { get; set; }
-    
-    [SepColumnIgnore]
-    public string InternalId { get; set; }
-}
-```
-
-2. Read and write CSV data:
-
-```csharp
-// Reading
-using var reader = Sep.Reader().FromFile("people.csv");
-foreach (var person in reader.GetRecords<Person>())
-{
-    Console.WriteLine($"{person.Name} is {person.Age} years old");
-}
-
-// Writing
-var people = new List<Person> { /* ... */ };
-using var writer = Sep.Writer().ToFile("output.csv");
-writer.WriteRecords(people);
-```
-
-## External Data Model
-
-1. Generate type info using attributes:
-
-```csharp
-[GenSepTypeInfo<Person>()]
-public partial class PersonTypeInfo;
-```
-
-2. Read and write CSV data:
-
-```csharp
-// Reading
-using var reader = Sep.Reader().FromFile("people.csv");
-foreach (var person in reader.GetRecords<Person>(PersonTypeInfo.Person))
-{
-    Console.WriteLine($"{person.Name} is {person.Age} years old");
-}
-
-// Writing
-var people = new List<Person> { /* ... */ };
-using var writer = Sep.Writer().ToFile("output.csv");
-writer.WriteRecords(people, PersonTypeInfo.Person);
 ```
 
 ## Available Attributes
