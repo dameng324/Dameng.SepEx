@@ -71,7 +71,10 @@ public class WriteTests
         writer.WriteRecords<Level1.Level2.Class>([]);
         var result = writer.ToString();
         Console.Write(result);
-        var expected = "String,Int,Double,OptionalDouble,Bool,OptionalBoolean,PlatformID,OptionalPlatformID,DateTime,CustomProperty\r\n";
+        var expected = """
+                       String,Int,Double,OptionalDouble,Bool,OptionalBoolean,PlatformID,OptionalPlatformID,DateTime,CustomProperty
+                       
+                       """;
         result.Should().Be(expected);
     }
     
