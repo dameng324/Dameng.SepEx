@@ -10,6 +10,19 @@ namespace Dameng.SepEx;
 /// <typeparam name="T"></typeparam>
 public interface ISepTypeInfo<T>
 {
-    public T Read(SepReader reader,SepReader.Row readRow);
-    public void Write(SepWriter writer,SepWriter.Row writeRow, T value);
+    /// <summary>
+    /// parse SepReader.Row data to record Type
+    /// </summary>
+    /// <param name="reader">SepReader</param>
+    /// <param name="readRow">SepReader.Row</param>
+    /// <returns>record</returns>
+    public T Read(SepReader reader, SepReader.Row readRow);
+
+    /// <summary>
+    /// write record data to SepWriter.Row.
+    /// </summary>
+    /// <param name="writer">SepWriter</param>
+    /// <param name="writeRow">SepWriter.Row</param>
+    /// <param name="value">record</param>
+    public void Write(SepWriter writer, SepWriter.Row writeRow, T value);
 }
