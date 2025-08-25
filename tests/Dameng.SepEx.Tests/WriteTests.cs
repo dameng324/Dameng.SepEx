@@ -63,4 +63,26 @@ public class WriteTests
             """;
         result.Should().Be(expected);
     }
+    
+    [Test]
+    public void EmptyWriter_ShouldHasHeader()
+    {
+        using var writer = Sep.New(',').Writer().ToText();
+        writer.WriteRecords<Level1.Level2.Class>([]);
+        var result = writer.ToString();
+        Console.Write(result);
+        var expected = "String,Int,Double,OptionalDouble,Bool,OptionalBoolean,PlatformID,OptionalPlatformID,DateTime,CustomProperty\r\n";
+        result.Should().Be(expected);
+    }
+    
+    [Test]
+    public void EmptyWriter_ShouldEmpty_WhenDoNotHasHeader()
+    {
+        using var writer = new SepWriterOptions { WriteHeader = false }.ToText();
+        writer.WriteRecords<Level1.Level2.Class>([]);
+        var result = writer.ToString();
+        Console.Write(result);
+        var expected = "";
+        result.Should().Be(expected);
+    }
 }

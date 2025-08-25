@@ -5,7 +5,7 @@ namespace Dameng.SepEx.Generator;
 
 public static class Utils
 {
-    internal static (string ReadCode, string WriteCode) GeneratePropertyCode(
+    internal static (string getHeaderCode, string ReadCode, string WriteCode) GeneratePropertyCode(
         INamedTypeSymbol targetType,
         GeneratorExecutionContext context
     )
@@ -84,6 +84,7 @@ public static class Utils
 
         StringBuilder propertyReadCodeBuilder = new StringBuilder();
         StringBuilder propertyWriteCodeBuilder = new StringBuilder();
+        StringBuilder getHeadersCodeBuilder = new StringBuilder();
 
         bool hasPrimaryConstructor =
             targetType.InstanceConstructors.FirstOrDefault(c =>
@@ -303,9 +304,12 @@ public static class Utils
                     }
                 }
 
+                
                 propertyWriteCodeBuilder.AppendLine(
                     $"        writeRow[{writeColKey}].Set(Dameng.SepEx.Parser.EscapeSepField({valueString},writer.Spec.Sep.Separator));"
                 );
+                getHeadersCodeBuilder.AppendLine(
+                    $"        yield return {writeColKey};");
             }
         }
 
@@ -323,6 +327,6 @@ public static class Utils
                 {{propertyReadCodeBuilder.ToString().TrimEnd().TrimEnd(',')}}
                         };
                 """;
-        return (instanceInitCode, propertyWriteCodeBuilder.ToString().TrimEnd());
+        return (getHeadersCodeBuilder.ToString().TrimEnd(),instanceInitCode, propertyWriteCodeBuilder.ToString().TrimEnd());
     }
 }

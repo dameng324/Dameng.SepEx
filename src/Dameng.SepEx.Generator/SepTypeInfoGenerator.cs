@@ -96,7 +96,7 @@ public class SepTypeInfoGenerator : ISourceGenerator
 
                             targetTypeNames.Add(targetType);
 
-                            var (readCode, writeCode) =Utils.GeneratePropertyCode(targetType, context);
+                            var (getHeaderCode,readCode, writeCode) =Utils.GeneratePropertyCode(targetType, context);
 
                             genClassCodeBuilder.AppendLine(
                                 $$"""
@@ -110,6 +110,14 @@ public class SepTypeInfoGenerator : ISourceGenerator
                                       public void Write(nietras.SeparatedValues.SepWriter writer,nietras.SeparatedValues.SepWriter.Row writeRow, {{targetType.ToDisplayString()}} value)
                                       {
                                   {{writeCode}}
+                                      }
+                                  
+                                      /// <summary>
+                                      /// This method provides headers for writer when empty records need be written.
+                                      /// </summary>
+                                      public IEnumerable<string> GetHeaders()
+                                      {
+                                  {{getHeaderCode}}
                                       }
                                   }
                                   """

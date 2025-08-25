@@ -90,10 +90,44 @@ public class SepParsableGenerator : ISourceGenerator
                           """
                     );
 
-                    var (initCode, writeCode) = Utils.GeneratePropertyCode(
+                    var (getHeaderCode,initCode, writeCode) = Utils.GeneratePropertyCode(
                         targetType,
                         context
                     );
+
+                    var classMemberBody =
+                        $$"""
+                              /// <summary>
+                              /// parse SepReader.Row data to <see cref="{{targetType.ToDisplayString()}}"/> instance.
+                              /// </summary>
+                              /// <param name="reader">SepReader</param>
+                              /// <param name="readRow">SepReader.Row</param>
+                              /// <returns><see cref="{{targetType.ToDisplayString()}}"/> instance</returns>
+                              public static {{targetType.ToDisplayString()}} Read(nietras.SeparatedValues.SepReader reader, nietras.SeparatedValues.SepReader.Row readRow) 
+                              {
+                          {{initCode}}
+                              }
+                              
+                              /// <summary>
+                              /// write <see cref="{{targetType.ToDisplayString()}}"/> instance data to SepWriter.Row.
+                              /// </summary>
+                              /// <param name="writer">SepWriter</param>
+                              /// <param name="writeRow">SepWriter.Row</param>
+                              /// <param name="value"><see cref="{{targetType.ToDisplayString()}}"/> instance</param>
+                              public static void Write(nietras.SeparatedValues.SepWriter writer,nietras.SeparatedValues.SepWriter.Row writeRow, {{targetType.ToDisplayString()}} value)
+                              {
+                          {{writeCode}}
+                              }
+                              
+                              /// <summary>
+                              /// This method provides headers for writer when empty records need be written.
+                              /// </summary>
+                              public static IEnumerable<string> GetHeaders()
+                              {
+                          {{getHeaderCode}}
+                              }
+                          """;
+                    
                     
                     var partialTypeDeclaration = GetPartialTypeDeclaration(targetType);
 
@@ -104,27 +138,7 @@ public class SepParsableGenerator : ISourceGenerator
                             $$"""
                               {{partialTypeDeclaration}} : ISepParsable<{{targetType.ToDisplayString()}}>
                               {
-                                  /// <summary>
-                                  /// parse SepReader.Row data to <see cref="{{targetType.ToDisplayString()}}"/> instance.
-                                  /// </summary>
-                                  /// <param name="reader">SepReader</param>
-                                  /// <param name="readRow">SepReader.Row</param>
-                                  /// <returns><see cref="{{targetType.ToDisplayString()}}"/> instance</returns>
-                                  public static {{targetType.ToDisplayString()}} Read(nietras.SeparatedValues.SepReader reader, nietras.SeparatedValues.SepReader.Row readRow) 
-                                  {
-                              {{initCode}}
-                                  }
-                              
-                                  /// <summary>
-                                  /// write <see cref="{{targetType.ToDisplayString()}}"/> instance data to SepWriter.Row.
-                                  /// </summary>
-                                  /// <param name="writer">SepWriter</param>
-                                  /// <param name="writeRow">SepWriter.Row</param>
-                                  /// <param name="value"><see cref="{{targetType.ToDisplayString()}}"/> instance</param>
-                                  public static void Write(nietras.SeparatedValues.SepWriter writer,nietras.SeparatedValues.SepWriter.Row writeRow, {{targetType.ToDisplayString()}} value)
-                                  {
-                              {{writeCode.TrimEnd()}}
-                                  }
+                              {{classMemberBody}}
                               }
                               """
                         );
@@ -132,7 +146,7 @@ public class SepParsableGenerator : ISourceGenerator
                     else
                     {
                         // Nested class - build proper containment structure
-                        genClassCodeBuilder.Append(GenerateNestedClassStructure(targetType,  initCode, writeCode));
+                        genClassCodeBuilder.Append(GenerateNestedClassStructure(targetType,  classMemberBody));
                     }
 
                     // Just change the filename for now as a test
@@ -149,7 +163,7 @@ public class SepParsableGenerator : ISourceGenerator
         }
     }
 
-    private static string GenerateNestedClassStructure(INamedTypeSymbol targetType,  string initCode, string writeCode)
+    private static string GenerateNestedClassStructure(INamedTypeSymbol targetType,  string classMemberBody)
     {
         // Build the list of containing classes from outermost to innermost
         var containers = new List<INamedTypeSymbol>();
@@ -168,27 +182,7 @@ public class SepParsableGenerator : ISourceGenerator
         var targetClassDef = $$"""
             {{nestedTypeDeclaration}} : ISepParsable<{{targetType.ToDisplayString()}}>
             {
-                /// <summary>
-                /// parse SepReader.Row data to <see cref="{{targetType.ToDisplayString()}}"/> instance.
-                /// </summary>
-                /// <param name="reader">SepReader</param>
-                /// <param name="readRow">SepReader.Row</param>
-                /// <returns><see cref="{{targetType.ToDisplayString()}}"/> instance</returns>
-                public static {{targetType.ToDisplayString()}} Read(nietras.SeparatedValues.SepReader reader, nietras.SeparatedValues.SepReader.Row readRow) 
-                {
-            {{initCode}}
-                }
-            
-                /// <summary>
-                /// write <see cref="{{targetType.ToDisplayString()}}"/> instance data to SepWriter.Row.
-                /// </summary>
-                /// <param name="writer">SepWriter</param>
-                /// <param name="writeRow">SepWriter.Row</param>
-                /// <param name="value"><see cref="{{targetType.ToDisplayString()}}"/> instance</param>
-                public static void Write(nietras.SeparatedValues.SepWriter writer,nietras.SeparatedValues.SepWriter.Row writeRow, {{targetType.ToDisplayString()}} value)
-                {
-            {{writeCode.TrimEnd()}}
-                }
+            {{classMemberBody}}
             }
             """;
         

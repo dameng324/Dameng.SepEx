@@ -25,4 +25,9 @@ public interface ISepTypeInfo<T>
     /// <param name="writeRow">SepWriter.Row</param>
     /// <param name="value">record</param>
     public void Write(SepWriter writer, SepWriter.Row writeRow, T value);
+
+    /// <summary>
+    /// This method provides headers for writer when empty records need be written.
+    /// </summary>
+    public IEnumerable<string> GetHeaders();
 }
