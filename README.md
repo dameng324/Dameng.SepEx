@@ -19,7 +19,6 @@ Install the NuGet packages:
 
 ```bash
 dotnet add package Dameng.SepEx
-dotnet add package Dameng.SepEx.Generator
 ```
 
 ## Usage & Migration
