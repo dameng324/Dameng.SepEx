@@ -122,7 +122,7 @@ public class SepParsableGenerator : ISourceGenerator
                               /// <summary>
                               /// This method provides headers for writer when empty records need be written.
                               /// </summary>
-                              public static IEnumerable<string> GetHeaders()
+                              public static global::System.Collections.Generic.IEnumerable<string> GetHeaders()
                               {
                           {{getHeaderCode}}
                               }

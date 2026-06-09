@@ -115,7 +115,7 @@ public class SepTypeInfoGenerator : ISourceGenerator
                                       /// <summary>
                                       /// This method provides headers for writer when empty records need be written.
                                       /// </summary>
-                                      public IEnumerable<string> GetHeaders()
+                                      public global::System.Collections.Generic.IEnumerable<string> GetHeaders()
                                       {
                                   {{getHeaderCode}}
                                       }
