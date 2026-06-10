@@ -217,9 +217,9 @@ public static class Utils
                     : isNullable
                         ? defaultValueAttributeValue is null
                             ? "null"
-                            : $"({underlyingType.ToDisplayString()}?){defaultValueAttributeValue}"
+                            : $"({underlyingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}?){defaultValueAttributeValue}"
                         : defaultValueAttributeValue is null
-                            ? "default(" + memberType.ToDisplayString() + ")"
+                            ? "default(" + memberType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + ")"
                             : defaultValueAttributeValue.ToString();
 
             var columnName =
@@ -257,7 +257,7 @@ public static class Utils
                 var valueCode =
                     underlyingType.SpecialType == SpecialType.System_String
                         ? $"global::Dameng.SepEx.Parser.UnescapeSepField(readRow[{readColKey}].Span).ToString()"
-                        : $"global::Dameng.SepEx.Parser.{tryReadMethodName}<{underlyingType.ToDisplayString()}>(reader,readRow,{readColKey},\"{format}\",out var v{propertyIndex})?v{propertyIndex}:{defaultValue}";
+                        : $"global::Dameng.SepEx.Parser.{tryReadMethodName}<{underlyingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}>(reader,readRow,{readColKey},\"{format}\",out var v{propertyIndex})?v{propertyIndex}:{defaultValue}";
 
                 propertyReadCodeBuilder.AppendLine(
                     hasPrimaryConstructor

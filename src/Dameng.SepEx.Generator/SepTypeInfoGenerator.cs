@@ -100,7 +100,7 @@ public class SepTypeInfoGenerator : ISourceGenerator
                                 $$"""
                                   file sealed class {{targetType.Name}}SepTypeInfo : global::Dameng.SepEx.ISepTypeInfo<{{targetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}>
                                   {
-                                      public {{targetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}} Read(global::nietras.SeparatedValues.SepReader reader,nietras.SeparatedValues.SepReader.Row readRow) 
+                                      public {{targetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}} Read(global::nietras.SeparatedValues.SepReader reader, global::nietras.SeparatedValues.SepReader.Row readRow) 
                                       {
                                   {{readCode}}
                                       }
