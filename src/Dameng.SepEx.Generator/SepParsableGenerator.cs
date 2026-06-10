@@ -82,11 +82,7 @@ public class SepParsableGenerator : ISourceGenerator
                           // </auto-generated> 
                           //------------------------------------------------------------------------------
                           
-                          using System;
-                          using Dameng.SepEx;
-
                           namespace {{targetType.ContainingNamespace.ToDisplayString()}};
-
                           """
                     );
 
@@ -98,23 +94,23 @@ public class SepParsableGenerator : ISourceGenerator
                     var classMemberBody =
                         $$"""
                               /// <summary>
-                              /// parse SepReader.Row data to <see cref="{{targetType.ToDisplayString()}}"/> instance.
+                              /// parse SepReader.Row data to <see cref="{{targetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}"/> instance.
                               /// </summary>
                               /// <param name="reader">SepReader</param>
                               /// <param name="readRow">SepReader.Row</param>
-                              /// <returns><see cref="{{targetType.ToDisplayString()}}"/> instance</returns>
-                              public static {{targetType.ToDisplayString()}} Read(nietras.SeparatedValues.SepReader reader, nietras.SeparatedValues.SepReader.Row readRow) 
+                              /// <returns><see cref="{{targetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}"/> instance</returns>
+                              public static {{targetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}} Read(global::nietras.SeparatedValues.SepReader reader, global::nietras.SeparatedValues.SepReader.Row readRow) 
                               {
                           {{initCode}}
                               }
                               
                               /// <summary>
-                              /// write <see cref="{{targetType.ToDisplayString()}}"/> instance data to SepWriter.Row.
+                              /// write <see cref="{{targetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}"/> instance data to SepWriter.Row.
                               /// </summary>
                               /// <param name="writer">SepWriter</param>
                               /// <param name="writeRow">SepWriter.Row</param>
-                              /// <param name="value"><see cref="{{targetType.ToDisplayString()}}"/> instance</param>
-                              public static void Write(nietras.SeparatedValues.SepWriter writer,nietras.SeparatedValues.SepWriter.Row writeRow, {{targetType.ToDisplayString()}} value)
+                              /// <param name="value"><see cref="{{targetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}"/> instance</param>
+                              public static void Write(global::nietras.SeparatedValues.SepWriter writer, global::nietras.SeparatedValues.SepWriter.Row writeRow, {{targetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}} value)
                               {
                           {{writeCode}}
                               }
@@ -136,7 +132,7 @@ public class SepParsableGenerator : ISourceGenerator
                         // Top-level class - use original logic
                         genClassCodeBuilder.Append(
                             $$"""
-                              {{partialTypeDeclaration}} : ISepParsable<{{targetType.ToDisplayString()}}>
+                              {{partialTypeDeclaration}} : global::Dameng.SepEx.ISepParsable<{{targetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}>
                               {
                               {{classMemberBody}}
                               }
@@ -180,7 +176,7 @@ public class SepParsableGenerator : ISourceGenerator
         // Build the nested structure
         var nestedTypeDeclaration = GetPartialTypeDeclaration(targetType);
         var targetClassDef = $$"""
-            {{nestedTypeDeclaration}} : ISepParsable<{{targetType.ToDisplayString()}}>
+            {{nestedTypeDeclaration}} : global::Dameng.SepEx.ISepParsable<{{targetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}>
             {
             {{classMemberBody}}
             }

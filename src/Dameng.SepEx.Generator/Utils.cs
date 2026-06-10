@@ -256,8 +256,8 @@ public static class Utils
             {
                 var valueCode =
                     underlyingType.SpecialType == SpecialType.System_String
-                        ? $"Dameng.SepEx.Parser.UnescapeSepField(readRow[{readColKey}].Span).ToString()"
-                        : $"Dameng.SepEx.Parser.{tryReadMethodName}<{underlyingType.ToDisplayString()}>(reader,readRow,{readColKey},\"{format}\",out var v{propertyIndex})?v{propertyIndex}:{defaultValue}";
+                        ? $"global::Dameng.SepEx.Parser.UnescapeSepField(readRow[{readColKey}].Span).ToString()"
+                        : $"global::Dameng.SepEx.Parser.{tryReadMethodName}<{underlyingType.ToDisplayString()}>(reader,readRow,{readColKey},\"{format}\",out var v{propertyIndex})?v{propertyIndex}:{defaultValue}";
 
                 propertyReadCodeBuilder.AppendLine(
                     hasPrimaryConstructor
@@ -306,7 +306,7 @@ public static class Utils
 
                 
                 propertyWriteCodeBuilder.AppendLine(
-                    $"        writeRow[{writeColKey}].Set(Dameng.SepEx.Parser.EscapeSepField({valueString},writer.Spec.Sep.Separator));"
+                    $"        writeRow[{writeColKey}].Set(global::Dameng.SepEx.Parser.EscapeSepField({valueString},writer.Spec.Sep.Separator));"
                 );
                 getHeadersCodeBuilder.AppendLine(
                     $"        yield return {writeColKey};");
@@ -316,13 +316,13 @@ public static class Utils
         var instanceInitCode = hasPrimaryConstructor
             ? $$"""
                         // PrimaryConstructor:{{hasPrimaryConstructor}}
-                        return new {{targetType.ToDisplayString()}}(
+                        return new {{targetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}(
                 {{propertyReadCodeBuilder.ToString().TrimEnd().TrimEnd(',')}}
                         );
                 """
             : $$"""
                         // PrimaryConstructor:{{hasPrimaryConstructor}}
-                        return new {{targetType.ToDisplayString()}}() 
+                        return new {{targetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}() 
                         {
                 {{propertyReadCodeBuilder.ToString().TrimEnd().TrimEnd(',')}}
                         };

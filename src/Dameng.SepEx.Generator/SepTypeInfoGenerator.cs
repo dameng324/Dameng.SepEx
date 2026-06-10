@@ -77,8 +77,6 @@ public class SepTypeInfoGenerator : ISourceGenerator
                               // Assembly: {{typeof(SepTypeInfoGenerator).Assembly.FullName}}
                               // </auto-generated> 
                               //------------------------------------------------------------------------------
-                              using System;
-                              using Dameng.SepEx;
 
                               namespace {{classSymbol.ContainingNamespace.ToDisplayString()}};
 
@@ -100,14 +98,14 @@ public class SepTypeInfoGenerator : ISourceGenerator
 
                             genClassCodeBuilder.AppendLine(
                                 $$"""
-                                  file sealed class {{targetType.Name}}SepTypeInfo : ISepTypeInfo<{{targetType.ToDisplayString()}}>
+                                  file sealed class {{targetType.Name}}SepTypeInfo : global::Dameng.SepEx.ISepTypeInfo<{{targetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}>
                                   {
-                                      public {{targetType.ToDisplayString()}} Read(nietras.SeparatedValues.SepReader reader,nietras.SeparatedValues.SepReader.Row readRow) 
+                                      public {{targetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}} Read(global::nietras.SeparatedValues.SepReader reader,nietras.SeparatedValues.SepReader.Row readRow) 
                                       {
                                   {{readCode}}
                                       }
 
-                                      public void Write(nietras.SeparatedValues.SepWriter writer,nietras.SeparatedValues.SepWriter.Row writeRow, {{targetType.ToDisplayString()}} value)
+                                      public void Write(global::nietras.SeparatedValues.SepWriter writer, global::nietras.SeparatedValues.SepWriter.Row writeRow, {{targetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}} value)
                                       {
                                   {{writeCode}}
                                       }
@@ -132,9 +130,9 @@ public class SepTypeInfoGenerator : ISourceGenerator
                                 $$"""
                                   
                                       /// <summary>
-                                      /// Generated ISepTypeInfo<{{targetTypeName.ToDisplayString()}}> 
+                                      /// Generated ISepTypeInfo of {{targetTypeName.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}
                                       /// </summary>
-                                      public static ISepTypeInfo<{{targetTypeName.ToDisplayString()}}> {{targetTypeName.Name}} { get; } = new {{targetTypeName.Name}}SepTypeInfo();
+                                      public static global::Dameng.SepEx.ISepTypeInfo<{{targetTypeName.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}> {{targetTypeName.Name}} { get; } = new {{targetTypeName.Name}}SepTypeInfo();
                                   """
                             );
                         }
